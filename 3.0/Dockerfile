@@ -1,0 +1,50 @@
+FROM ruby:2.2-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+		imagemagick \
+		libmysqlclient18 \
+		libpq5 \
+		libsqlite3-0 \
+	&& rm -rf /var/lib/apt/lists/*
+
+ENV RAILS_ENV production
+WORKDIR /usr/src/redmine
+
+ENV REDMINE_VERSION 3.0.4
+ENV REDMINE_DOWNLOAD_MD5 572be68e311468b835ec8ee9c5f0bb72
+
+RUN curl -fSL "http://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz" -o redmine.tar.gz \
+	&& echo "$REDMINE_DOWNLOAD_MD5 redmine.tar.gz" | md5sum -c - \
+	&& tar -xvf redmine.tar.gz --strip-components=1 \
+	&& rm redmine.tar.gz files/delete.me
+
+RUN buildDeps='\
+		gcc \
+		libmagickcore-dev \
+		libmagickwand-dev \
+		libmysqlclient-dev \
+		libpq-dev \
+		libsqlite3-dev \
+		make \
+		patch \
+	' \
+	&& set -ex \
+	&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& bundle install --without development test \
+	&& for adapter in mysql2 postgresql sqlite3; do \
+		echo "$RAILS_ENV:" > ./config/database.yml; \
+		echo "  adapter: $adapter" >> ./config/database.yml; \
+		bundle install --without development test; \
+	done \
+	&& rm ./config/database.yml \
+	&& apt-get purge -y --auto-remove $buildDeps
+
+
+VOLUME /usr/src/redmine/files
+
+COPY docker-entrypoint.sh /
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+EXPOSE 3000
+CMD ["rails", "server", "-b", "0.0.0.0"]
