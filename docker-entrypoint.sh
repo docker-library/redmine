@@ -60,6 +60,9 @@ if [ "$1" = 'rails' -o "$1" = 'rake' ]; then
 	if [ "$1" = 'rails' -a -z "$REDMINE_NO_DB_MIGRATE" ]; then
 		rake db:migrate
 	fi
+	
+	chown -R redmine:redmine files log public/plugin_assets
+	exec gosu redmine "$@"
 fi
 
 exec "$@"
