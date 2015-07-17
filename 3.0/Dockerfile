@@ -11,6 +11,11 @@ RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/dow
 	&& rm /usr/local/bin/gosu.asc \
 	&& chmod +x /usr/local/bin/gosu
 
+RUN set -x \
+	&& curl -fSL "https://github.com/krallin/tini/releases/download/v0.5.0/tini" -o /usr/local/bin/tini \
+	&& chmod +x /usr/local/bin/tini \
+	&& tini -h
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		imagemagick \
 		libmysqlclient18 \
