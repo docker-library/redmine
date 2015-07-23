@@ -57,7 +57,7 @@ case "$1" in
 					$RAILS_ENV:
 					  secret_key_base: "$REDMINE_SECRET_KEY_BASE"
 				YML
-			else
+			elif [ ! -f /usr/src/redmine/config/initializers/secret_token.rb ]; then
 				rake generate_secret_token
 			fi
 		fi
