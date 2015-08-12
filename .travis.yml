@@ -1,0 +1,27 @@
+language: bash
+
+# for secret experimental features ;)
+sudo: 9000
+
+env:
+  - VERSION=3.0
+  - VERSION=2.6
+
+install:
+  - git clone https://github.com/docker-library/official-images.git ~/official-images
+
+before_script:
+  - env | sort
+  - cd "$VERSION"
+  - image="$(awk '$1 == "FROM" { print $2; exit }' passenger/Dockerfile)"
+
+script:
+  - docker build -t "$image" .
+  - ~/official-images/test/run.sh "$image"
+  - docker build -t "$image-passenger" passenger
+  - ~/official-images/test/run.sh "$image-passenger"
+
+after_script:
+  - docker images
+
+# vim:set et ts=2 sw=2:
