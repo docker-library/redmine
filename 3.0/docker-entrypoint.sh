@@ -67,6 +67,9 @@ case "$1" in
 		
 		chown -R redmine:redmine files log public/plugin_assets
 		
+		# remove PID file to enable restarting the container
+		rm -f /usr/src/redmine/tmp/pids/server.pid
+		
 		if [ "$1" = 'passenger' ]; then
 			# Don't fear the reaper.
 			set -- tini -- "$@"
