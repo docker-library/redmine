@@ -6,7 +6,7 @@ case "$1" in
 		if [ ! -f './config/database.yml' ]; then
 			if [ "$MYSQL_PORT_3306_TCP" ]; then
 				adapter='mysql2'
-				host='mysql'
+                host="${MYSQL_ENV_MYSQL_HOST:-'mysql'}"
 				port="${MYSQL_PORT_3306_TCP_PORT:-3306}"
 				username="${MYSQL_ENV_MYSQL_USER:-root}"
 				password="${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_ENV_MYSQL_ROOT_PASSWORD}"
@@ -14,7 +14,7 @@ case "$1" in
 				encoding=
 			elif [ "$POSTGRES_PORT_5432_TCP" ]; then
 				adapter='postgresql'
-				host='postgres'
+                host="${POSTGRES_ENV_POSTGRES_HOST:-'postgres'}"
 				port="${POSTGRES_PORT_5432_TCP_PORT:-5432}"
 				username="${POSTGRES_ENV_POSTGRES_USER:-postgres}"
 				password="${POSTGRES_ENV_POSTGRES_PASSWORD}"
