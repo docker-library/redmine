@@ -21,7 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		libmysqlclient18 \
 		libpq5 \
 		libsqlite3-0 \
-		git-core \
+		bzr \
+		cvs \
+		darcs \
+		git \
+		mercurial \
+		subversion \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV RAILS_ENV production
