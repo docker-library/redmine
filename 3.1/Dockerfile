@@ -21,6 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		libmysqlclient18 \
 		libpq5 \
 		libsqlite3-0 \
+		\
+		bzr \
+		git \
+		mercurial \
+		openssh-client \
+		subversion \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV RAILS_ENV production
