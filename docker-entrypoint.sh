@@ -67,6 +67,9 @@ case "$1" in
 		
 		chown -R redmine:redmine files log public/plugin_assets
 		
+		# Make redmine aware of plugins
+		gosu redmine rake redmine:plugins:migrate
+		
 		# remove PID file to enable restarting the container
 		rm -f /usr/src/redmine/tmp/pids/server.pid
 		
