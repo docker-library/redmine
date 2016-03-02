@@ -1,6 +1,6 @@
 FROM redmine:3.0
 
-ENV PASSENGER_VERSION 5.0.25
+ENV PASSENGER_VERSION 5.0.26
 RUN buildDeps=' \
 		make \
 	' \
