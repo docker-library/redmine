@@ -11,7 +11,7 @@ case "$1" in
 				username="${MYSQL_ENV_MYSQL_USER:-root}"
 				password="${MYSQL_ENV_MYSQL_PASSWORD:-$MYSQL_ENV_MYSQL_ROOT_PASSWORD}"
 				database="${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_ENV_MYSQL_USER:-redmine}}"
-				encoding=
+				encoding="${MYSQL_ENV_MYSQL_ENCODING}"
 			elif [ "$POSTGRES_PORT_5432_TCP" ]; then
 				adapter='postgresql'
 				host='postgres'
@@ -19,7 +19,7 @@ case "$1" in
 				username="${POSTGRES_ENV_POSTGRES_USER:-postgres}"
 				password="${POSTGRES_ENV_POSTGRES_PASSWORD}"
 				database="${POSTGRES_ENV_POSTGRES_DB:-$username}"
-				encoding=utf8
+				encoding="${POSTGRES_ENV_POSTGRES_ENCODING}"
 			else
 				echo >&2 'warning: missing MYSQL_PORT_3306_TCP or POSTGRES_PORT_5432_TCP environment variables'
 				echo >&2 '  Did you forget to --link some_mysql_container:mysql or some-postgres:postgres?'
