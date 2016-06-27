@@ -19,7 +19,7 @@ case "$1" in
 				: "${REDMINE_DB_DATABASE:=${MYSQL_ENV_MYSQL_DATABASE:-${MYSQL_ENV_MYSQL_USER:-redmine}}}"
 				: "${REDMINE_DB_ENCODING:=}"
 			elif [ "$REDMINE_DB_POSTGRES" ]; then
-				adapter='postgres'
+				adapter='postgresql'
 				host="$REDMINE_DB_POSTGRES"
 				: "${REDMINE_DB_PORT:=5432}"
 				: "${REDMINE_DB_USERNAME:=${POSTGRES_ENV_POSTGRES_USER:-postgres}}"
