@@ -46,7 +46,7 @@ WORKDIR /usr/src/redmine
 ENV REDMINE_VERSION 3.3.0
 ENV REDMINE_DOWNLOAD_MD5 0c0abb2d4efde455c3505d8caf01cb2d
 
-RUN curl -fSL "http://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz" -o redmine.tar.gz \
+RUN curl -fSL "https://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz" -o redmine.tar.gz \
 	&& echo "$REDMINE_DOWNLOAD_MD5 redmine.tar.gz" | md5sum -c - \
 	&& tar -xvf redmine.tar.gz --strip-components=1 \
 	&& rm redmine.tar.gz files/delete.me log/delete.me \
