@@ -17,3 +17,5 @@ ADD redmine.conf /etc/apache2/conf-available/redmine.conf
 RUN a2enconf redmine
 ADD start.sh /start.sh
 CMD /start.sh
+
+VOLUME /var/lib/redmine
