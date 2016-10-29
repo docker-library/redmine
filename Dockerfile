@@ -7,7 +7,7 @@ ENV DEFAULT_LANGUAGE en
 
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 libapache2-mod-passenger bundler
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y emacs23-nox debconf-utils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y emacs-nox debconf-utils
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -dy redmine-mysql
 RUN a2enmod passenger
 RUN rm -r /var/www/html
