@@ -118,7 +118,7 @@ case "$1" in
 
 		if [ "$1" = 'passenger' ]; then
 			# Don't fear the reaper.
-			set -- tini -- "$@"
+			set -- tini -s -- "$@"
 		fi
 
 		set -- gosu redmine "$@"
