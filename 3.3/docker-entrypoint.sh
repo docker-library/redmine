@@ -108,6 +108,7 @@ case "$1" in
 		fi
 		
 		chown -R redmine:redmine files log public/plugin_assets
+		chmod -R 755 files log tmp public/plugin_assets
 		
 		# remove PID file to enable restarting the container
 		rm -f /usr/src/redmine/tmp/pids/server.pid
