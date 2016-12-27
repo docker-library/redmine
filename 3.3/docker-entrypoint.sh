@@ -107,6 +107,7 @@ case "$1" in
 			gosu redmine rake db:migrate
 		fi
 		
+		# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
 		chown -R redmine:redmine files log public/plugin_assets
 		chmod -R 755 files log tmp public/plugin_assets
 		
