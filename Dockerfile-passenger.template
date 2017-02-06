@@ -1,6 +1,6 @@
 FROM %%REDMINE%%
 
-ENV PASSENGER_VERSION 5.0.30
+ENV PASSENGER_VERSION 5.1.2
 RUN buildDeps=' \
 		make \
 	' \
