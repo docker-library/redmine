@@ -13,7 +13,6 @@ relasesUrl='https://www.redmine.org/releases'
 versionsPage=$(curl -fsSL "$relasesUrl")
 
 passenger="$(curl -fsSL 'https://rubygems.org/api/v1/gems/passenger.json' | sed -r 's/^.*"version":"([^"]+)".*$/\1/')"
-( set -x && sed -ri 's/^(ENV PASSENGER_VERSION) .*/\1 '"$passenger"'/;' Dockerfile*.template )
 
 travisEnv=
 for version in "${versions[@]}"; do
@@ -27,7 +26,7 @@ for version in "${versions[@]}"; do
 		sed 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/; s/%%REDMINE_VERSION%%/'"$fullVersion"'/' Dockerfile.template > "$version/Dockerfile"
 		
 		mkdir -p "$version/passenger"
-		sed 's/%%REDMINE%%/redmine:'"$version"'/' Dockerfile-passenger.template > "$version/passenger/Dockerfile"
+		sed 's/%%REDMINE%%/redmine:'"$version"'/; s/%%PASSENGER_VERSION%%/'"$passenger"'/' Dockerfile-passenger.template > "$version/passenger/Dockerfile"
 	)
 	
 	travisEnv='\n  - VERSION='"$version$travisEnv"
