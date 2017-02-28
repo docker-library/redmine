@@ -15,9 +15,9 @@ before_script:
   - image="$(awk '$1 == "FROM" { print $2; exit }' passenger/Dockerfile)"
 
 script:
-  - docker build -t "$image" .
+  - travis_retry docker build -t "$image" .
   - ~/official-images/test/run.sh "$image"
-  - docker build -t "$image-passenger" passenger
+  - travis_retry docker build -t "$image-passenger" passenger
   - ~/official-images/test/run.sh "$image-passenger"
 
 after_script:
