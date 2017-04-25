@@ -111,6 +111,10 @@ case "$1" in
 		chown -R redmine:redmine files log public/plugin_assets
 		chmod -R 755 files log tmp public/plugin_assets
 		
+		if [ "$1" != 'rake' -a -n "$REDMINE_PLUGINS_MIGRATE" ]; then
+			gosu redmine rake redmine:plugins:migrate
+		fi
+		
 		# remove PID file to enable restarting the container
 		rm -f /usr/src/redmine/tmp/pids/server.pid
 		
