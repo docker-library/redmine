@@ -76,6 +76,7 @@ RUN buildDeps=' \
 		echo "$RAILS_ENV:" > ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 		bundle install --without development test; \
+		cp Gemfile.lock Gemfile.lock.${adapter}; \
 	done \
 	&& rm ./config/database.yml \
 	&& apt-get purge -y --auto-remove $buildDeps

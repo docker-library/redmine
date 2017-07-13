@@ -90,7 +90,7 @@ case "$1" in
 		fi
 		
 		# ensure the right database adapter is active in the Gemfile.lock
-		bundle install --without development test
+		cp /usr/src/redmine/Gemfile.lock.${adapter} /usr/src/redmine/Gemfile.lock
 		
 		if [ ! -s config/secrets.yml ]; then
 			file_env 'REDMINE_SECRET_KEY_BASE'
