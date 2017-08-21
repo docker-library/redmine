@@ -25,7 +25,7 @@ ENV TINI_VERSION v0.15.0
 
 RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch##*-}" in \
-        amd64) ARCH='x64';; \
+        amd64) ARCH='amd64';; \
         arm64) ARCH='arm64';; \
     *) echo "unsupported architecture"; exit 1 ;; \
     esac \
