@@ -21,16 +21,22 @@ RUN set -x \
 	&& gosu nobody true
 
 # grab tini for signal processing and zombie killing
-ENV TINI_VERSION v0.9.0
-RUN set -x \
-	&& wget -O /usr/local/bin/tini "https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini" \
-	&& wget -O /usr/local/bin/tini.asc "https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini.asc" \
+ENV TINI_VERSION v0.15.0
+
+RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
+    && case "${dpkgArch##*-}" in \
+        amd64) ARCH='x64';; \
+        arm64) ARCH='arm64';; \
+    *) echo "unsupported architecture"; exit 1 ;; \
+    esac \
+	&& wget -O /usr/local/bin/tini-$ARCH "https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini-$ARCH" \
+	&& wget -O /usr/local/bin/tini-$ARCH.asc "https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini-$ARCH.asc" \
 	&& export GNUPGHOME="$(mktemp -d)" \
 	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 6380DC428747F6C393FEACA59A84159D7001A4E5 \
-	&& gpg --batch --verify /usr/local/bin/tini.asc /usr/local/bin/tini \
-	&& rm -r "$GNUPGHOME" /usr/local/bin/tini.asc \
-	&& chmod +x /usr/local/bin/tini \
-	&& tini -h
+	&& gpg --batch --verify /usr/local/bin/tini-$ARCH.asc /usr/local/bin/tini-$ARCH \
+	&& rm -r "$GNUPGHOME" /usr/local/bin/tini-$ARCH.asc \
+	&& chmod +x /usr/local/bin/tini-$ARCH \
+	&& tini-$ARCH -h
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		imagemagick \
@@ -68,7 +74,7 @@ RUN buildDeps=' \
 		make \
 		patch \
 	' \
-	&& set -ex \
+        && set -ex \
 	&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& bundle install --without development test \
