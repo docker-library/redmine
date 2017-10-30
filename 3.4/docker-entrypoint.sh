@@ -87,20 +87,10 @@ case "$1" in
 				[ -n "$val" ] || continue
 				echo "  $var: \"$val\"" >> config/database.yml
 			done
-		else
-			# parse the database config to get the database adapter name
-			# so we can use the right Gemfile.lock
-			adapter="$(
-				bundle exec ruby -e "
-					require 'yaml'
-					conf = YAML.load_file('./config/database.yml')
-					puts conf['$RAILS_ENV']['adapter']
-				"
-			)"
 		fi
 		
 		# ensure the right database adapter is active in the Gemfile.lock
-		cp "Gemfile.lock.${adapter}" Gemfile.lock
+		[ ! -z $adapter ] && cp "Gemfile.lock.${adapter}" Gemfile.lock
 		# install additional gems for Gemfile.local and plugins
 		bundle check || bundle install --without development test
 		
