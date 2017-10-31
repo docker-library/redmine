@@ -91,7 +91,7 @@ case "$1" in
 			# parse the database config to get the database adapter name
 			# so we can use the right Gemfile.lock
 			adapter="$(
-				bundle exec ruby -e "
+				ruby -e "
 					require 'yaml'
 					conf = YAML.load_file('./config/database.yml')
 					puts conf['$RAILS_ENV']['adapter']
