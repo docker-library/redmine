@@ -135,6 +135,11 @@ case "$1" in
 			# Don't fear the reaper.
 			set -- tini -- "$@"
 		fi
+
+                # set webroot path if given
+                if [ "$RELATIVE_URL_ROOT" ]; then
+                    sed -i '/^Redmine::Utils::relative_url_root/d;/^Rails.application.initialize/aRedmine::Utils::relative_url_root = "'"${RELATIVE_URL_ROOT}"'"' config/environment.rb
+                fi
 		
 		set -- gosu redmine "$@"
 		;;
