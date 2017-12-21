@@ -28,11 +28,14 @@ case "$1" in
 		if [ ! -f './config/database.yml' ]; then
 			file_env 'REDMINE_DB_MYSQL'
 			file_env 'REDMINE_DB_POSTGRES'
+			file_env 'REDMINE_DB_SQLSERVER'
 			
 			if [ "$MYSQL_PORT_3306_TCP" ] && [ -z "$REDMINE_DB_MYSQL" ]; then
 				export REDMINE_DB_MYSQL='mysql'
 			elif [ "$POSTGRES_PORT_5432_TCP" ] && [ -z "$REDMINE_DB_POSTGRES" ]; then
 				export REDMINE_DB_POSTGRES='postgres'
+			elif [ "$POSTGRES_PORT_1433_TCP" ] && [ -z "$REDMINE_DB_SQLSERVER" ]; then
+				export REDMINE_DB_SQLSERVER='sqlserver'
 			fi
 			
 			if [ "$REDMINE_DB_MYSQL" ]; then
@@ -51,9 +54,17 @@ case "$1" in
 				file_env 'REDMINE_DB_PASSWORD' "${POSTGRES_ENV_POSTGRES_PASSWORD}"
 				file_env 'REDMINE_DB_DATABASE' "${POSTGRES_ENV_POSTGRES_DB:-${REDMINE_DB_USERNAME:-}}"
 				file_env 'REDMINE_DB_ENCODING' 'utf8'
+			elif [ "$REDMINE_DB_SQLSERVER" ]; then
+				adapter='sqlserver'
+				host="$REDMINE_DB_SQLSERVER"
+				file_env 'REDMINE_DB_PORT' '1433'				
+				file_env 'REDMINE_DB_USERNAME' "${POSTGRES_ENV_SQLSERVER_USER:-administrator}"
+				file_env 'REDMINE_DB_PASSWORD' "${POSTGRES_ENV_SQLSERVER_PASSWORD}"
+				file_env 'REDMINE_DB_DATABASE' "${POSTGRES_ENV_SQLSERVER_DB:-${REDMINE_DB_USERNAME:-}}"
+				file_env 'REDMINE_DB_ENCODING' 'utf8'
 			else
 				echo >&2
-				echo >&2 'warning: missing REDMINE_DB_MYSQL or REDMINE_DB_POSTGRES environment variables'
+				echo >&2 'warning: missing REDMINE_DB_MYSQL, REDMINE_DB_POSTGRES, or REDMINE_DB_SQLSERVER environment variables'
 				echo >&2
 				echo >&2 '*** Using sqlite3 as fallback. ***'
 				echo >&2
