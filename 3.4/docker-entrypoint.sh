@@ -57,7 +57,7 @@ case "$1" in
 			elif [ "$REDMINE_DB_SQLSERVER" ]; then
 				adapter='sqlserver'
 				host="$REDMINE_DB_SQLSERVER"
-				file_env 'REDMINE_DB_PORT' '1433'				
+				file_env 'REDMINE_DB_PORT' '1433'
 				file_env 'REDMINE_DB_USERNAME' "${POSTGRES_ENV_SQLSERVER_USER:-administrator}"
 				file_env 'REDMINE_DB_PASSWORD' "${POSTGRES_ENV_SQLSERVER_PASSWORD}"
 				file_env 'REDMINE_DB_DATABASE' "${POSTGRES_ENV_SQLSERVER_DB:-${REDMINE_DB_USERNAME:-}}"
