@@ -69,7 +69,6 @@ RUN buildDeps=' \
 		patch \
 		libgmp-dev \
 		build-essential \
-		wget \
 		libc6-dev \
 	' \
 	&& set -ex \
