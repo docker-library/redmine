@@ -34,7 +34,7 @@ case "$1" in
 				export REDMINE_DB_MYSQL='mysql'
 			elif [ "$POSTGRES_PORT_5432_TCP" ] && [ -z "$REDMINE_DB_POSTGRES" ]; then
 				export REDMINE_DB_POSTGRES='postgres'
-			elif [ "$POSTGRES_PORT_1433_TCP" ] && [ -z "$REDMINE_DB_SQLSERVER" ]; then
+			elif [ "$SQLSERVER_PORT_1433_TCP" ] && [ -z "$REDMINE_DB_SQLSERVER" ]; then
 				export REDMINE_DB_SQLSERVER='sqlserver'
 			fi
 			
@@ -58,10 +58,10 @@ case "$1" in
 				adapter='sqlserver'
 				host="$REDMINE_DB_SQLSERVER"
 				file_env 'REDMINE_DB_PORT' '1433'
-				file_env 'REDMINE_DB_USERNAME' "${POSTGRES_ENV_SQLSERVER_USER:-administrator}"
-				file_env 'REDMINE_DB_PASSWORD' "${POSTGRES_ENV_SQLSERVER_PASSWORD}"
-				file_env 'REDMINE_DB_DATABASE' "${POSTGRES_ENV_SQLSERVER_DB:-${REDMINE_DB_USERNAME:-}}"
-				file_env 'REDMINE_DB_ENCODING' 'utf8'
+				file_env 'REDMINE_DB_USERNAME' ''
+				file_env 'REDMINE_DB_PASSWORD' ''
+				file_env 'REDMINE_DB_DATABASE' ''
+				file_env 'REDMINE_DB_ENCODING' ''
 			else
 				echo >&2
 				echo >&2 'warning: missing REDMINE_DB_MYSQL, REDMINE_DB_POSTGRES, or REDMINE_DB_SQLSERVER environment variables'
