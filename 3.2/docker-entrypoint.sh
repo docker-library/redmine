@@ -34,8 +34,6 @@ case "$1" in
 				export REDMINE_DB_MYSQL='mysql'
 			elif [ "$POSTGRES_PORT_5432_TCP" ] && [ -z "$REDMINE_DB_POSTGRES" ]; then
 				export REDMINE_DB_POSTGRES='postgres'
-			elif [ "$SQLSERVER_PORT_1433_TCP" ] && [ -z "$REDMINE_DB_SQLSERVER" ]; then
-				export REDMINE_DB_SQLSERVER='sqlserver'
 			fi
 			
 			if [ "$REDMINE_DB_MYSQL" ]; then
