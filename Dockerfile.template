@@ -67,8 +67,6 @@ RUN buildDeps=' \
 		libsqlite3-dev \
 		make \
 		patch \
-		libgmp-dev \
-		libc6-dev \
 	' \
 	&& set -ex \
 	&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \
