@@ -72,7 +72,7 @@ RUN buildDeps=' \
 	&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& bundle install --without development test \
-	&& for adapter in mysql2 postgresql sqlite3; do \
+	&& for adapter in mysql2 postgresql sqlserver sqlite3; do \
 		echo "$RAILS_ENV:" > ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 		bundle install --without development test; \
