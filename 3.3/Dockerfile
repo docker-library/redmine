@@ -48,8 +48,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
 
-ENV REDMINE_VERSION 3.3.5
-ENV REDMINE_DOWNLOAD_MD5 e9ce2c935f4ada5c7d3c5cdfa96fe986
+ENV REDMINE_VERSION 3.3.6
+ENV REDMINE_DOWNLOAD_MD5 103bcfc7a0603815130fba8626c97661
 
 RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz" \
 	&& echo "$REDMINE_DOWNLOAD_MD5 redmine.tar.gz" | md5sum -c - \
