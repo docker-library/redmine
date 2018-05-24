@@ -113,6 +113,11 @@ case "$1" in
 		# install additional gems for Gemfile.local and plugins
 		bundle check || bundle install --without development test
 		
+		# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
+		chown -R redmine:redmine files log public/plugin_assets
+		# directories 755, files 644:
+		chmod -R ugo-x,u+rwX,go+rX,go-w files log tmp public/plugin_assets
+
 		if [ ! -s config/secrets.yml ]; then
 			file_env 'REDMINE_SECRET_KEY_BASE'
 			if [ "$REDMINE_SECRET_KEY_BASE" ]; then
@@ -127,11 +132,6 @@ case "$1" in
 		if [ "$1" != 'rake' -a -z "$REDMINE_NO_DB_MIGRATE" ]; then
 			gosu redmine rake db:migrate
 		fi
-		
-		# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-		chown -R redmine:redmine files log public/plugin_assets
-		# directories 755, files 644:
-		chmod -R ugo-x,u+rwX,go+rX,go-w files log tmp public/plugin_assets
 		
 		if [ "$1" != 'rake' -a -n "$REDMINE_PLUGINS_MIGRATE" ]; then
 			gosu redmine rake redmine:plugins:migrate
