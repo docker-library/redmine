@@ -14,9 +14,9 @@ For more information about the official images process, see the [docker-library/
 
 ---
 
--	[Travis CI:  
+-	[Travis CI:
 	![build status badge](https://img.shields.io/travis/docker-library/redmine/master.svg)](https://travis-ci.org/docker-library/redmine/branches)
--	[Automated `update.sh`:  
+-	[Automated `update.sh`:
 	![build status badge](https://doi-janky.infosiftr.net/job/update.sh/job/redmine/badge/icon)](https://doi-janky.infosiftr.net/job/update.sh/job/redmine)
 
 | Build | Status | Badges | (per-arch) |
