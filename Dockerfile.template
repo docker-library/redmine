@@ -1,4 +1,4 @@
-FROM ruby:%%RUBY_VERSION%%-slim
+FROM ruby:%%RUBY_VERSION%%-slim-jessie
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r redmine && useradd -r -g redmine redmine
@@ -33,11 +33,6 @@ RUN set -x \
 	&& tini -h
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-		imagemagick \
-		libmysqlclient18 \
-		libpq5 \
-		libsqlite3-0 \
-		\
 		bzr \
 		git \
 		mercurial \
@@ -58,7 +53,12 @@ RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_V
 	&& mkdir -p tmp/pdf public/plugin_assets \
 	&& chown -R redmine:redmine ./
 
-RUN buildDeps=' \
+RUN set -eux; \
+	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		freetds-dev \
 		gcc \
 		libmagickcore-dev \
 		libmagickwand-dev \
@@ -67,20 +67,31 @@ RUN buildDeps=' \
 		libsqlite3-dev \
 		make \
 		patch \
-	' \
-	&& set -ex \
-	&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& bundle install --without development test \
-	&& for adapter in mysql2 postgresql sqlserver sqlite3; do \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+	\
+	bundle install --without development test; \
+	for adapter in mysql2 postgresql sqlserver sqlite3; do \
 		echo "$RAILS_ENV:" > ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 		bundle install --without development test; \
 		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
-	done \
-	&& rm ./config/database.yml \
-	&& apt-get purge -y --auto-remove $buildDeps
-
+	done; \
+	rm ./config/database.yml; \
+	\
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { print $(NF-1) }' \
+		| sort -u \
+		| grep -v '^/usr/local/' \
+		| xargs -r dpkg-query --search \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
 VOLUME /usr/src/redmine/files
 
