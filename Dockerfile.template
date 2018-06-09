@@ -1,10 +1,12 @@
-FROM ruby:%%RUBY_VERSION%%-slim-jessie
+FROM ruby:%%RUBY_VERSION%%-slim-stretch
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r redmine && useradd -r -g redmine redmine
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		ca-certificates \
+		dirmngr \
+		gnupg \
 		wget \
 	&& rm -rf /var/lib/apt/lists/*
 
@@ -58,6 +60,11 @@ RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_V
 
 RUN set -eux; \
 	\
+	apt-mark auto \
+		dirmngr \
+		gnupg \
+		wget \
+	; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -65,9 +72,11 @@ RUN set -eux; \
 		gcc \
 		libmagickcore-dev \
 		libmagickwand-dev \
-		libmysqlclient-dev \
+		libmariadbclient-dev \
 		libpq-dev \
 		libsqlite3-dev \
+# TinyTDS 1.0.x requires openssl 1.0.x
+		libssl1.0-dev \
 		make \
 		patch \
 	; \
