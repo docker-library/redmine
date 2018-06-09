@@ -63,7 +63,6 @@ RUN set -eux; \
 	apt-mark auto \
 		dirmngr \
 		gnupg \
-		wget \
 	; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
