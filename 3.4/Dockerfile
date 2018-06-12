@@ -5,14 +5,19 @@ RUN groupadd -r redmine && useradd -r -g redmine redmine
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		ca-certificates \
-		dirmngr \
-		gnupg \
 		wget \
 	&& rm -rf /var/lib/apt/lists/*
 
 # grab gosu for easy step-down from root
 ENV GOSU_VERSION 1.10
 RUN set -x \
+	&& fetchDeps=" \
+		dirmngr \
+		gnupg \
+	" \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends $fetchDeps \
+	\
 	&& wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)" \
 	&& wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc" \
 	&& export GNUPGHOME="$(mktemp -d)" \
@@ -21,11 +26,20 @@ RUN set -x \
 	&& gpgconf --kill all \
 	&& rm -r "$GNUPGHOME" /usr/local/bin/gosu.asc \
 	&& chmod +x /usr/local/bin/gosu \
-	&& gosu nobody true
+	&& gosu nobody true \
+	&& apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps \
+	&& rm -rf /var/lib/apt/lists/*
 
 # grab tini for signal processing and zombie killing
 ENV TINI_VERSION v0.16.1
 RUN set -x \
+	&& fetchDeps=" \
+		dirmngr \
+		gnupg \
+	" \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends $fetchDeps \
+	\
 	&& wget -O /usr/local/bin/tini "https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini-$(dpkg --print-architecture)" \
 	&& wget -O /usr/local/bin/tini.asc "https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini-$(dpkg --print-architecture).asc" \
 	&& export GNUPGHOME="$(mktemp -d)" \
@@ -34,7 +48,9 @@ RUN set -x \
 	&& gpgconf --kill all \
 	&& rm -r "$GNUPGHOME" /usr/local/bin/tini.asc \
 	&& chmod +x /usr/local/bin/tini \
-	&& tini -h
+	&& tini -h \
+	&& apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps \
+	&& rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		bzr \
@@ -60,10 +76,6 @@ RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_V
 
 RUN set -eux; \
 	\
-	apt-mark auto \
-		dirmngr \
-		gnupg \
-	; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
