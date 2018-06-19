@@ -35,6 +35,7 @@ RUN set -x \
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		bzr \
 		git \
+		imagemagick \
 		mercurial \
 		openssh-client \
 		subversion \
