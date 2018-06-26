@@ -128,10 +128,14 @@ case "$1" in
 			gosu redmine rake db:migrate
 		fi
 		
-		# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-		chown -R redmine:redmine files log public/plugin_assets
-		# directories 755, files 644:
-		chmod -R ugo-x,u+rwX,go+rX,go-w files log tmp public/plugin_assets
+		file_env 'REDMINE_NO_CHOWN' ''
+		
+		if [ "$REDMINE_NO_CHOWN" == "" ]; then
+			# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
+			chown -R redmine:redmine files log public/plugin_assets
+			# directories 755, files 644:
+			chmod -R ugo-x,u+rwX,go+rX,go-w files log tmp public/plugin_assets
+		fi
 		
 		if [ "$1" != 'rake' -a -n "$REDMINE_PLUGINS_MIGRATE" ]; then
 			gosu redmine rake redmine:plugins:migrate
