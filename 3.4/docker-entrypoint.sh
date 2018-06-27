@@ -127,7 +127,7 @@ case "$1" in
 		if [ "$1" != 'rake' -a -z "$REDMINE_NO_DB_MIGRATE" ]; then
 			gosu redmine rake db:migrate
 		fi
-		
+
 		file_env 'REDMINE_NO_CHOWN' ''
 		
 		if [ "$REDMINE_NO_CHOWN" == "" ]; then
