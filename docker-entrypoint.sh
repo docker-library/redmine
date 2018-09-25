@@ -76,7 +76,7 @@ case "$1" in
 				file_env 'REDMINE_DB_ENCODING' 'utf8'
 				
 				mkdir -p "$(dirname "$REDMINE_DB_DATABASE")"
-				chown -R redmine:redmine "$(dirname "$REDMINE_DB_DATABASE")"
+				find "$(dirname "$REDMINE_DB_DATABASE")" \! -user redmine -exec chown redmine '{}' +
 			fi
 			
 			REDMINE_DB_ADAPTER="$adapter"
@@ -129,9 +129,10 @@ case "$1" in
 		fi
 		
 		# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-		chown -R redmine:redmine files log public/plugin_assets
+		find files log public/plugin_assets \! -user redmine -exec chown redmine:redmine '{}' +
 		# directories 755, files 644:
-		chmod -R ugo-x,u+rwX,go+rX,go-w files log tmp public/plugin_assets
+		find files log tmp public/plugin_assets -type d \! -perm 755 -exec chmod 755 '{}' +
+		find files log tmp public/plugin_assets -type f \! -perm 644 -exec chmod 644 '{}' +
 		
 		if [ "$1" != 'rake' -a -n "$REDMINE_PLUGINS_MIGRATE" ]; then
 			gosu redmine rake redmine:plugins:migrate
