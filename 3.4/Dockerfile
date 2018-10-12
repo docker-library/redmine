@@ -3,17 +3,24 @@ FROM ruby:2.4-slim-stretch
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r redmine && useradd -r -g redmine redmine
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
 		ca-certificates \
 		wget \
 		\
 		bzr \
 		git \
-		imagemagick \
 		mercurial \
 		openssh-client \
 		subversion \
-	&& rm -rf /var/lib/apt/lists/*
+		\
+# https://github.com/docker-library/redmine/issues/132
+# (without "gsfonts" we get "Magick::ImageMagickError (non-conforming drawing primitive definition `text' @ error/draw.c/DrawImage/3265):")
+		gsfonts \
+		imagemagick \
+	; \
+	rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
