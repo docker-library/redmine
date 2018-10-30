@@ -1,5 +1,5 @@
-#!/bin/bash
-set -eo pipefail
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
 defaultRubyVersion='2.4'
@@ -16,31 +16,29 @@ fi
 versions=( "${versions[@]%/}" )
 
 relasesUrl='https://www.redmine.org/releases'
-versionsPage=$(curl -fsSL "$relasesUrl")
+versionsPage="$(wget -qO- "$relasesUrl")"
 
-passenger="$(curl -fsSL 'https://rubygems.org/api/v1/gems/passenger.json' | sed -r 's/^.*"version":"([^"]+)".*$/\1/')"
+passenger="$(wget -qO- 'https://rubygems.org/api/v1/gems/passenger.json' | sed -r 's/^.*"version":"([^"]+)".*$/\1/')"
 
 travisEnv=
 for version in "${versions[@]}"; do
 	fullVersion="$(echo $versionsPage | sed -r "s/.*($version\.[0-9]+)\.tar\.gz[^.].*/\1/" | sort -V | tail -1)"
-	md5="$(curl -fsSL "$relasesUrl/redmine-$fullVersion.tar.gz.md5" | cut -d' ' -f1)"
+	md5="$(wget -qO- "$relasesUrl/redmine-$fullVersion.tar.gz.md5" | cut -d' ' -f1)"
 
 	rubyVersion="${rubyVersions[$version]:-$defaultRubyVersion}"
 
-	(
-		set -x
+	echo "$version: $fullVersion (ruby $rubyVersion; passenger $passenger)"
 
-		cp docker-entrypoint.sh "$version/"
-		sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
-			-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
-			-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
-			Dockerfile.template > "$version/Dockerfile"
+	cp docker-entrypoint.sh "$version/"
+	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
+		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
+		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
+		Dockerfile.template > "$version/Dockerfile"
 
-		mkdir -p "$version/passenger"
-		sed -e 's/%%REDMINE%%/redmine:'"$version"'/' \
-			-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/' \
-			Dockerfile-passenger.template > "$version/passenger/Dockerfile"
-	)
+	mkdir -p "$version/passenger"
+	sed -e 's/%%REDMINE%%/redmine:'"$version"'/' \
+		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/' \
+		Dockerfile-passenger.template > "$version/passenger/Dockerfile"
 
 	travisEnv='\n  - VERSION='"$version$travisEnv"
 done
