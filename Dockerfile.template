@@ -74,8 +74,11 @@ RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_V
 	&& echo "$REDMINE_DOWNLOAD_MD5 redmine.tar.gz" | md5sum -c - \
 	&& tar -xvf redmine.tar.gz --strip-components=1 \
 	&& rm redmine.tar.gz files/delete.me log/delete.me \
-	&& mkdir -p tmp/pdf public/plugin_assets \
-	&& chown -R redmine:redmine ./
+	&& mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids \
+	&& chown -R redmine:redmine ./ \
+# fix permissions for running as an arbitrary user
+	&& chmod -R ugo=rwX config db sqlite \
+	&& find log tmp -type d -exec chmod 1777 '{}' +
 
 RUN set -eux; \
 	\
@@ -120,6 +123,8 @@ RUN set -eux; \
 		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
 	done; \
 	rm ./config/database.yml; \
+# fix permissions for running as an arbitrary user
+	chmod ugo=rwX Gemfile.lock; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \

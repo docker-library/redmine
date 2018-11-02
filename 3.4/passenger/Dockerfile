@@ -27,4 +27,7 @@ RUN set -eux; \
 	passenger-config install-agent; \
 	passenger-config download-nginx-engine
 
+# adjust Passenger to write the PID to the same file as "rails server"
+ENV PASSENGER_PID_FILE tmp/pids/server.pid
+
 CMD ["passenger", "start"]
