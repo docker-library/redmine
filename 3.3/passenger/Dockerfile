@@ -1,6 +1,6 @@
 FROM redmine:3.3
 
-ENV PASSENGER_VERSION 5.3.5
+ENV PASSENGER_VERSION 5.3.6
 
 RUN set -eux; \
 	\
