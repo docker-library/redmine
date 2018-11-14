@@ -67,6 +67,15 @@ RUN set -eux; \
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
 
+# https://github.com/docker-library/redmine/issues/138#issuecomment-438834176
+# (bundler needs this for running as an arbitrary user)
+ENV HOME /home/redmine
+RUN set -eux; \
+	[ ! -d "$HOME" ]; \
+	mkdir -p "$HOME"; \
+	chown redmine:redmine "$HOME"; \
+	chmod 1777 "$HOME"
+
 ENV REDMINE_VERSION 3.3.8
 ENV REDMINE_DOWNLOAD_MD5 6ca9284fa1c3571f6c83dd0e0d0fec1b
 
