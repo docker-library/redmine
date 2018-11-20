@@ -122,18 +122,19 @@ RUN set -eux; \
 	rm freetds.tar.bz2; \
 	( cd freetds && gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" && ./configure --build="$gnuArch" --enable-silent-rules && make -j "$(nproc)" && make -C src install && make -C include install ); \
 	rm -rf freetds; \
-	bundle config build.tiny_tds --enable-system-freetds; \
+	gosu redmine bundle config build.tiny_tds --enable-system-freetds; \
 	\
-	bundle install --without development test; \
+	gosu redmine bundle install --without development test; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
 		echo "$RAILS_ENV:" > ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
-		bundle install --without development test; \
+		gosu redmine bundle install --without development test; \
 		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
 	done; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
-	chmod ugo=rwX Gemfile.lock; \
+	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
+	rm -rf ~redmine/.bundle; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
