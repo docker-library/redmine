@@ -35,7 +35,7 @@ RUN set -eux; \
 	\
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
-	export GOSU_VERSION='1.10'; \
+	export GOSU_VERSION='1.11'; \
 	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
 	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
 	export GNUPGHOME="$(mktemp -d)"; \
