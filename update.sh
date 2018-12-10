@@ -29,7 +29,7 @@ for version in "${versions[@]}"; do
 
 	echo "$version: $fullVersion (ruby $rubyVersion; passenger $passenger)"
 
-	cp additional_environment.rb docker-entrypoint.sh "$version/"
+	cp docker-entrypoint.sh "$version/"
 	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
 		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
 		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \

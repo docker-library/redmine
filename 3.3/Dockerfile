@@ -85,6 +85,8 @@ RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_V
 	&& rm redmine.tar.gz files/delete.me log/delete.me \
 	&& mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids \
 	&& chown -R redmine:redmine ./ \
+# log to STDOUT (https://github.com/docker-library/redmine/issues/108)
+	&& echo 'config.logger = Logger.new(STDOUT)' > config/additional_environment.rb \
 # fix permissions for running as an arbitrary user
 	&& chmod -R ugo=rwX config db sqlite \
 	&& find log tmp -type d -exec chmod 1777 '{}' +
@@ -149,8 +151,6 @@ RUN set -eux; \
 		| xargs -r apt-mark manual \
 	; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
-
-COPY additional_environment.rb config/
 
 VOLUME /usr/src/redmine/files
 
