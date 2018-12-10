@@ -81,7 +81,7 @@ ENV REDMINE_DOWNLOAD_MD5 06db1556593192856dfe155b794e8037
 
 RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz" \
 	&& echo "$REDMINE_DOWNLOAD_MD5 redmine.tar.gz" | md5sum -c - \
-	&& tar -xvf redmine.tar.gz --strip-components=1 \
+	&& tar -xf redmine.tar.gz --strip-components=1 \
 	&& rm redmine.tar.gz files/delete.me log/delete.me \
 	&& mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids \
 	&& chown -R redmine:redmine ./ \
