@@ -2,9 +2,10 @@
 set -Eeuo pipefail
 
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
-defaultRubyVersion='2.4'
+defaultRubyVersion='2.5'
 declare -A rubyVersions=(
 	[3.3]='2.3'
+	[3.4]='2.4'
 )
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
