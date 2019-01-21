@@ -1,4 +1,4 @@
-FROM ruby:2.5-slim-stretch
+FROM ruby:2.6-slim-stretch
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r redmine && useradd -r -g redmine redmine
