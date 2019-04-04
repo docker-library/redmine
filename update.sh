@@ -29,11 +29,20 @@ for version in "${versions[@]}"; do
 
 	echo "$version: $fullVersion (ruby $rubyVersion; passenger $passenger)"
 
-	cp docker-entrypoint.sh "$version/"
+	sed -e 's/%%SUDO_CMD%%/'"gosu"'/' \
+		docker-entrypoint.sh > "$version/docker-entrypoint.sh"
 	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
 		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
 		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
-		Dockerfile.template > "$version/Dockerfile"
+		Dockerfile-debian.template > "$version/Dockerfile"
+
+	mkdir -p "$version/alpine"
+	sed -e 's/%%SUDO_CMD%%/'"su-exec"'/' \
+		docker-entrypoint.sh > "$version/alpine/docker-entrypoint.sh"
+	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
+		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
+		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
+		Dockerfile-alpine.template > "$version/alpine/Dockerfile"
 
 	mkdir -p "$version/passenger"
 	sed -e 's/%%REDMINE%%/redmine:'"$version"'/' \
