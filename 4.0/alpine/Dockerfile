@@ -61,6 +61,7 @@ RUN set -eux; \
 		patch \
 		postgresql-dev \
 		sqlite-dev \
+		ttf2ufm \
 		zlib-dev \
 		\
 # tiny_tds 1.0.x requires OpenSSL 1.0
@@ -80,17 +81,17 @@ RUN set -eux; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
 	chmod +x /usr/local/bundle/bin/*; \
-	rm -rf ~redmine/.bundle
-
-# Todo: remove build dependencies
-#	runDeps="$( \
-#		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
-#		| tr ',' '\n' \
-#		| sort -u \
-#		| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
-#	)"; \
-#	apk add --virtual .redmine-rundeps $runDeps; \
-#	apk del .build-deps
+	rm -rf ~redmine/.bundle; \
+# https://github.com/naitoh/rbpdf/issues/31
+	rm -f /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
+	runDeps="$( \
+		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
+		| tr ',' '\n' \
+		| sort -u \
+		| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+	)"; \
+	apk add --virtual .redmine-rundeps $runDeps; \
+	apk del .build-deps
 
 VOLUME /usr/src/redmine/files
 
