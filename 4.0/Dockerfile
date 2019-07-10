@@ -1,4 +1,4 @@
-FROM ruby:2.6-slim-stretch
+FROM ruby:2.6-slim-buster
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r redmine && useradd -r -g redmine redmine
@@ -97,6 +97,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		dpkg-dev \
+		freetds-dev \
 		gcc \
 		libmagickcore-dev \
 		libmagickwand-dev \
@@ -105,26 +106,8 @@ RUN set -eux; \
 		libsqlite3-dev \
 		make \
 		patch \
-		\
-# tiny_tds 1.0.x requires OpenSSL 1.0
-# see https://github.com/rails-sqlserver/tiny_tds/commit/3269dd3bcfbe4201ab51aa2870a6aaddfcbdfa5d (tiny_tds 1.2.x+ is required for OpenSSL 1.1 support)
-		libssl1.0-dev \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
-	\
-# https://github.com/travis-ci/travis-ci/issues/9391 (can't let "tiny_tds" download FreeTDS for us because FTP)
-# https://github.com/rails-sqlserver/tiny_tds/pull/384 (newer version uses HTTP!)
-# https://github.com/rails-sqlserver/tiny_tds/pull/345 (... but then can't download it for us)
-# http://www.freetds.org/files/stable/?C=M;O=D
-# (if/when we update to Debian Buster and thus get FreeTDS newer than 0.95 in the distro, we can switch back to simply installing "freetds-dev" from Debian)
-	wget -O freetds.tar.bz2 'http://www.freetds.org/files/stable/freetds-1.00.91.tar.bz2'; \
-	echo '8d71f9f29be0fe0637e443dd3807b3fd *freetds.tar.bz2' | md5sum -c -; \
-	mkdir freetds; \
-	tar -xf freetds.tar.bz2 -C freetds --strip-components=1; \
-	rm freetds.tar.bz2; \
-	( cd freetds && gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" && ./configure --build="$gnuArch" --enable-silent-rules && make -j "$(nproc)" && make -C src install && make -C include install ); \
-	rm -rf freetds; \
-	gosu redmine bundle config build.tiny_tds --enable-system-freetds; \
 	\
 	gosu redmine bundle install --without development test; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
