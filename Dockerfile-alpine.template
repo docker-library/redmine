@@ -1,7 +1,7 @@
-FROM ruby:%%RUBY_VERSION%%-alpine
+FROM ruby:%%RUBY_VERSION%%-alpine3.10
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
-RUN addgroup -S redmine && adduser -S -G redmine redmine
+RUN addgroup -S redmine && adduser -S -H -G redmine redmine
 
 RUN set -eux; \
 	apk add --no-cache \
@@ -31,6 +31,7 @@ WORKDIR /usr/src/redmine
 # (bundler needs this for running as an arbitrary user)
 ENV HOME /home/redmine
 RUN set -eux; \
+	[ ! -d "$HOME" ]; \
 	mkdir -p "$HOME"; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
@@ -45,6 +46,8 @@ RUN set -eux; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
 	chown -R redmine:redmine ./; \
+# log to STDOUT (https://github.com/docker-library/redmine/issues/108)
+	echo 'config.logger = Logger.new(STDOUT)' > config/additional_environment.rb; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
@@ -52,6 +55,7 @@ RUN set -eux; \
 RUN set -eux; \
 	\
 	apk add --no-cache --virtual .build-deps \
+		coreutils \
 		freetds-dev \
 		gcc \
 		imagemagick6-dev \
@@ -63,12 +67,7 @@ RUN set -eux; \
 		sqlite-dev \
 		ttf2ufm \
 		zlib-dev \
-		\
-# tiny_tds 1.0.x requires OpenSSL 1.0
-# see https://github.com/rails-sqlserver/tiny_tds/commit/3269dd3bcfbe4201ab51aa2870a6aaddfcbdfa5d (tiny_tds 1.2.x+ is required for OpenSSL 1.1 support)
-		openssl-dev \
 	; \
-#	su-exec redmine bundle config build.tiny_tds --enable-system-freetds; \
 	\
 	su-exec redmine bundle install --without development test; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
@@ -80,10 +79,12 @@ RUN set -eux; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
-	chmod +x /usr/local/bundle/bin/*; \
+# this requires coreutils because "chmod +X" in busybox will remove +x on files (and coreutils leaves files alone with +X)
 	rm -rf ~redmine/.bundle; \
+	\
 # https://github.com/naitoh/rbpdf/issues/31
-	rm -f /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
+	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
+	\
 	runDeps="$( \
 		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
 		| tr ',' '\n' \

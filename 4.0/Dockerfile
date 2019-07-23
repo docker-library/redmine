@@ -79,24 +79,24 @@ RUN set -eux; \
 ENV REDMINE_VERSION 4.0.4
 ENV REDMINE_DOWNLOAD_MD5 35a4f60b35fed2b10d14cb12fc8aef50
 
-RUN wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz" \
-	&& echo "$REDMINE_DOWNLOAD_MD5 redmine.tar.gz" | md5sum -c - \
-	&& tar -xvf redmine.tar.gz --strip-components=1 \
-	&& rm redmine.tar.gz files/delete.me log/delete.me \
-	&& mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids \
-	&& chown -R redmine:redmine ./ \
+RUN set -eux; \
+	wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz"; \
+	echo "$REDMINE_DOWNLOAD_MD5 *redmine.tar.gz" | md5sum -c -; \
+	tar -xf redmine.tar.gz --strip-components=1; \
+	rm redmine.tar.gz files/delete.me log/delete.me; \
+	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
+	chown -R redmine:redmine ./; \
 # log to STDOUT (https://github.com/docker-library/redmine/issues/108)
-	&& echo 'config.logger = Logger.new(STDOUT)' > config/additional_environment.rb \
+	echo 'config.logger = Logger.new(STDOUT)' > config/additional_environment.rb; \
 # fix permissions for running as an arbitrary user
-	&& chmod -R ugo=rwX config db sqlite \
-	&& find log tmp -type d -exec chmod 1777 '{}' +
+	chmod -R ugo=rwX config db sqlite; \
+	find log tmp -type d -exec chmod 1777 '{}' +
 
 RUN set -eux; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		dpkg-dev \
 		freetds-dev \
 		gcc \
 		libmagickcore-dev \
