@@ -1,7 +1,9 @@
 FROM ruby:2.4-alpine3.10
 
-# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
-RUN addgroup -S redmine && adduser -S -H -G redmine redmine
+# explicitly set uid/gid to guarantee that it won't change in the future
+# the values 999:999 are identical to the current user/group id assigned
+# alpine already has a gid 999, so we'll use the next id
+RUN addgroup -S -g 1000 redmine && adduser -S -H -G redmine -u 999 redmine
 
 RUN set -eux; \
 	apk add --no-cache \
