@@ -90,7 +90,7 @@ for version in "${versions[@]}"; do
 		Directory: $version
 	EOE
 
-	for variant in passenger; do
+	for variant in passenger alpine; do
 		[ -f "$version/$variant/Dockerfile" ] || continue
 
 		commit="$(dirCommit "$version/$variant")"
