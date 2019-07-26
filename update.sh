@@ -33,13 +33,22 @@ for version in "${versions[@]}"; do
 	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
 		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
 		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
-		Dockerfile.template > "$version/Dockerfile"
+		Dockerfile-debian.template > "$version/Dockerfile"
 
 	mkdir -p "$version/passenger"
 	sed -e 's/%%REDMINE%%/redmine:'"$version"'/' \
 		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/' \
 		Dockerfile-passenger.template > "$version/passenger/Dockerfile"
 
+	mkdir -p "$version/alpine"
+	cp docker-entrypoint.sh "$version/alpine/"
+	sed -i -e 's/gosu/su-exec/g' "$version/alpine/docker-entrypoint.sh"
+	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
+		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
+		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
+		Dockerfile-alpine.template > "$version/alpine/Dockerfile"
+
+	travisEnv='\n  - VERSION='"$version/alpine$travisEnv"
 	travisEnv='\n  - VERSION='"$version$travisEnv"
 done
 
