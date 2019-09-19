@@ -110,11 +110,11 @@ RUN set -eux; \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
 	\
-	gosu redmine bundle install --without development test; \
+	gosu redmine bundle install --jobs "$(nproc)" --without development test; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
 		echo "$RAILS_ENV:" > ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
-		gosu redmine bundle install --without development test; \
+		gosu redmine bundle install --jobs "$(nproc)" --without development test; \
 		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
 	done; \
 	rm ./config/database.yml; \

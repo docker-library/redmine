@@ -71,11 +71,11 @@ RUN set -eux; \
 		zlib-dev \
 	; \
 	\
-	su-exec redmine bundle install --without development test; \
+	su-exec redmine bundle install --jobs "$(nproc)" --without development test; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
 		echo "$RAILS_ENV:" > ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
-		su-exec redmine bundle install --without development test; \
+		su-exec redmine bundle install --jobs "$(nproc)" --without development test; \
 		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
 	done; \
 	rm ./config/database.yml; \
