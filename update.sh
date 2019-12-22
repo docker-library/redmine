@@ -29,24 +29,39 @@ for version in "${versions[@]}"; do
 
 	echo "$version: $fullVersion (ruby $rubyVersion; passenger $passenger)"
 
+	sedExpr='
+			s/%%REDMINE_VERSION%%/'"$fullVersion"'/;
+			s/%%RUBY_VERSION%%/'"$rubyVersion"'/;
+			s/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/;
+			s/%%REDMINE%%/redmine:'"$version"'/;
+			s/%%PASSENGER_VERSION%%/'"$passenger"'/;
+		'
+	sedAlpineExpr="$sedExpr"
+	sedDebianExpr="$sedExpr"
+
+	if [ "$version" = 3.4 ] || [ "$version" = 4.0 ]; then
+		sedAlpineExpr+='
+			s/imagemagick /imagemagick6 /;
+			/ghostscript /d;
+			/gcc/a \\t\timagemagick6-dev \\
+		'
+		sedDebianExpr+='
+			/ghostscript /d;
+			/gcc/a \\t\tlibmagickcore-dev \\
+			/gcc/a \\t\tlibmagickwand-dev \\
+		'
+	fi
+
 	cp docker-entrypoint.sh "$version/"
-	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
-		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
-		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
-		Dockerfile-debian.template > "$version/Dockerfile"
+	sed -r "$sedDebianExpr" Dockerfile-debian.template > "$version/Dockerfile"
 
 	mkdir -p "$version/passenger"
-	sed -e 's/%%REDMINE%%/redmine:'"$version"'/' \
-		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/' \
-		Dockerfile-passenger.template > "$version/passenger/Dockerfile"
+	sed -r "$sedExpr" Dockerfile-passenger.template > "$version/passenger/Dockerfile"
 
 	mkdir -p "$version/alpine"
 	cp docker-entrypoint.sh "$version/alpine/"
 	sed -i -e 's/gosu/su-exec/g' "$version/alpine/docker-entrypoint.sh"
-	sed -e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/' \
-		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/' \
-		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/' \
-		Dockerfile-alpine.template > "$version/alpine/Dockerfile"
+	sed -r "$sedAlpineExpr" Dockerfile-alpine.template > "$version/alpine/Dockerfile"
 
 	travisEnv='\n  - VERSION='"$version/alpine$travisEnv"
 	travisEnv='\n  - VERSION='"$version$travisEnv"
