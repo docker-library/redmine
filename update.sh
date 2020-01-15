@@ -29,39 +29,44 @@ for version in "${versions[@]}"; do
 
 	echo "$version: $fullVersion (ruby $rubyVersion; passenger $passenger)"
 
-	sedExpr='
-			s/%%REDMINE_VERSION%%/'"$fullVersion"'/;
-			s/%%RUBY_VERSION%%/'"$rubyVersion"'/;
-			s/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/;
-			s/%%REDMINE%%/redmine:'"$version"'/;
-			s/%%PASSENGER_VERSION%%/'"$passenger"'/;
-		'
-	sedAlpineExpr="$sedExpr"
-	sedDebianExpr="$sedExpr"
+	commonSedArgs=(
+		-r
+		-e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/'
+		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/'
+		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/'
+		-e 's/%%REDMINE%%/redmine:'"$version"'/'
+		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/'
+	)
+	alpineSedArgs=()
 
+	# https://github.com/docker-library/redmine/pull/184
+	# https://www.redmine.org/issues/22481
+	# https://www.redmine.org/issues/30492
 	if [ "$version" = 3.4 ] || [ "$version" = 4.0 ]; then
-		sedAlpineExpr+='
-			s/imagemagick /imagemagick6 /;
-			/ghostscript /d;
-			/gcc/a \\t\timagemagick6-dev \\
-		'
-		sedDebianExpr+='
-			/ghostscript /d;
-			/gcc/a \\t\tlibmagickcore-dev \\
-			/gcc/a \\t\tlibmagickwand-dev \\
-		'
+		commonSedArgs+=(
+			-e '/ghostscript /d'
+		)
+		alpineSedArgs+=(
+			-e 's/imagemagick/imagemagick6/g'
+		)
+	else
+		commonSedArgs+=(
+			-e '/imagemagick-dev/d'
+			-e '/libmagickcore-dev/d'
+			-e '/libmagickwand-dev/d'
+		)
 	fi
 
 	cp docker-entrypoint.sh "$version/"
-	sed -r "$sedDebianExpr" Dockerfile-debian.template > "$version/Dockerfile"
+	sed "${commonSedArgs[@]}" Dockerfile-debian.template > "$version/Dockerfile"
 
 	mkdir -p "$version/passenger"
-	sed -r "$sedExpr" Dockerfile-passenger.template > "$version/passenger/Dockerfile"
+	sed "${commonSedArgs[@]}" Dockerfile-passenger.template > "$version/passenger/Dockerfile"
 
 	mkdir -p "$version/alpine"
 	cp docker-entrypoint.sh "$version/alpine/"
 	sed -i -e 's/gosu/su-exec/g' "$version/alpine/docker-entrypoint.sh"
-	sed -r "$sedAlpineExpr" Dockerfile-alpine.template > "$version/alpine/Dockerfile"
+	sed "${commonSedArgs[@]}" "${alpineSedArgs[@]}" Dockerfile-alpine.template > "$version/alpine/Dockerfile"
 
 	travisEnv='\n  - VERSION='"$version/alpine$travisEnv"
 	travisEnv='\n  - VERSION='"$version$travisEnv"
