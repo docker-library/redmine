@@ -24,6 +24,8 @@ RUN set -eux; \
 # (without "ghostscript-fonts" we get "Magick::ImageMagickError (non-conforming drawing primitive definition `text' @ error/draw.c/DrawImage/3265):")
 		ghostscript-fonts \
 		imagemagick6 \
+# we also need "gs" for generating PDF thumbnails
+		ghostscript \
 	;
 
 ENV RAILS_ENV production

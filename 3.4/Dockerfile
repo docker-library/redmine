@@ -20,6 +20,8 @@ RUN set -eux; \
 # (without "gsfonts" we get "Magick::ImageMagickError (non-conforming drawing primitive definition `text' @ error/draw.c/DrawImage/3265):")
 		gsfonts \
 		imagemagick \
+# we also need "gs" for generating PDF thumbnails
+		ghostscript \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
