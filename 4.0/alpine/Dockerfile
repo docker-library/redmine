@@ -20,8 +20,8 @@ RUN set -eux; \
 		openssh-client \
 		subversion \
 		\
-# https://github.com/docker-library/redmine/issues/132
-# (without "ghostscript-fonts" we get "Magick::ImageMagickError (non-conforming drawing primitive definition `text' @ error/draw.c/DrawImage/3265):")
+# we need "gsfonts" for generating PNGs of Gantt charts
+# and "ghostscript" for creating PDF thumbnails (in 4.1+)
 		ghostscript-fonts \
 		imagemagick6 \
 	;
@@ -60,7 +60,6 @@ RUN set -eux; \
 		coreutils \
 		freetds-dev \
 		gcc \
-		imagemagick6-dev \
 		make \
 		mariadb-dev \
 		musl-dev \
@@ -69,6 +68,8 @@ RUN set -eux; \
 		sqlite-dev \
 		ttf2ufm \
 		zlib-dev \
+# in 4.1+, imagemagick6-dev is no longer necessary/used: https://www.redmine.org/issues/30492
+		imagemagick6-dev \
 	; \
 	\
 	su-exec redmine bundle install --jobs "$(nproc)" --without development test; \

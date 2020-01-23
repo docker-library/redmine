@@ -16,8 +16,9 @@ RUN set -eux; \
 		openssh-client \
 		subversion \
 		\
-# https://github.com/docker-library/redmine/issues/132
-# (without "gsfonts" we get "Magick::ImageMagickError (non-conforming drawing primitive definition `text' @ error/draw.c/DrawImage/3265):")
+# we need "gsfonts" for generating PNGs of Gantt charts
+# and "ghostscript" for creating PDF thumbnails (in 4.1+)
+		ghostscript \
 		gsfonts \
 		imagemagick \
 	; \
@@ -100,8 +101,6 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends \
 		freetds-dev \
 		gcc \
-		libmagickcore-dev \
-		libmagickwand-dev \
 		libmariadbclient-dev \
 		libpq-dev \
 		libsqlite3-dev \
