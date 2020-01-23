@@ -156,6 +156,10 @@ if [ -n "$isLikelyRedmine" ]; then
 		rake redmine:plugins:migrate
 	fi
 
+	if [ "$1" != 'rake' -a -n "$REDMINE_PLUGINS_ASSETS" ]; then
+		rake redmine:plugins:assets
+	fi
+
 	# remove PID file to enable restarting the container
 	rm -f tmp/pids/server.pid
 
