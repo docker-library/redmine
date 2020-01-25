@@ -148,6 +148,38 @@ if [ -n "$isLikelyRedmine" ]; then
 			rake generate_secret_token
 		fi
 	fi
+	if [ ! -s config/configuration.yml ] && [ -n "$REDMINE_SMTP_ADDRESS" ]; then
+		file_env 'REDMINE_SMTP_DELIVERY_METHOD' ':smtp'
+		file_env 'REDMINE_SMTP_ADDRESS'
+		file_env 'REDMINE_SMTP_PORT'
+		file_env 'REDMINE_SMTP_DOMAIN'
+		file_env 'REDMINE_SMTP_USER_NAME'
+		file_env 'REDMINE_SMTP_PASSWORD'
+		file_env 'REDMINE_SMTP_AUTHENTICATION'
+		file_env 'REDMINE_SMTP_ENABLE_STARTTLS_AUTO'
+		file_env 'REDMINE_SMTP_OPENSSL_VERIFY_MODE'
+		file_env 'REDMINE_SMTP_SSL'
+		echo "$RAILS_ENV:" > config/configuration.yml
+		echo "  email_delivery:" >> config/configuration.yml
+		echo "    delivery_method: $REDMINE_SMTP_DELIVERY_METHOD" >> config/configuration.yml
+		echo "    smtp_settings:" >> config/configuration.yml
+		for var in \
+			address \
+			port \
+			domain \
+			user_name \
+			password \
+			authentication \
+			enable_starttls_auto \
+			openssl_verify_mode \
+			ssl \
+		; do
+			env="REDMINE_SMTP_${var^^}"
+			val="${!env}"
+			[ -n "$val" ] || continue
+			echo "      $var: \"$val\"" >> config/configuration.yml
+		done
+	fi
 	if [ "$1" != 'rake' -a -z "$REDMINE_NO_DB_MIGRATE" ]; then
 		rake db:migrate
 	fi
