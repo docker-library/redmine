@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
 defaultRubyVersion='2.6'
 declare -A rubyVersions=(
-	[3.4]='2.4'
+	#[3.4]='2.4'
 )
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
@@ -42,7 +42,7 @@ for version in "${versions[@]}"; do
 	# https://github.com/docker-library/redmine/pull/184
 	# https://www.redmine.org/issues/22481
 	# https://www.redmine.org/issues/30492
-	if [ "$version" = 3.4 ] || [ "$version" = 4.0 ]; then
+	if [ "$version" = 4.0 ]; then
 		commonSedArgs+=(
 			-e '/ghostscript /d'
 		)
