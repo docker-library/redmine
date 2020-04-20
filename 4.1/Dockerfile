@@ -50,7 +50,7 @@ RUN set -eux; \
 	\
 # grab tini for signal processing and zombie killing
 # https://github.com/krallin/tini/releases
-	export TINI_VERSION='0.18.0'; \
+	export TINI_VERSION='0.19.0'; \
 	wget -O /usr/local/bin/tini "https://github.com/krallin/tini/releases/download/v$TINI_VERSION/tini-$dpkgArch"; \
 	wget -O /usr/local/bin/tini.asc "https://github.com/krallin/tini/releases/download/v$TINI_VERSION/tini-$dpkgArch.asc"; \
 	export GNUPGHOME="$(mktemp -d)"; \
