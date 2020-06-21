@@ -1,4 +1,4 @@
-FROM ruby:2.6-alpine3.11
+FROM ruby:2.6-alpine3.12
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
