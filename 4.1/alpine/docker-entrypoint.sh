@@ -40,12 +40,12 @@ _fix_permissions() {
 }
 
 # allow the container to be started with `--user`
-if [ -n "$isLikelyRedmine" ] && [ "$(id -u)" = '0' ]; then
+if [ -n "$isLikelyRedmine" -o -n "$PREPARE_ENVIRONMENT" ] && [ "$(id -u)" = '0' ]; then
 	_fix_permissions
 	exec su-exec redmine "$BASH_SOURCE" "$@"
 fi
 
-if [ -n "$isLikelyRedmine" ]; then
+if [ -n "$isLikelyRedmine" -o -n "$PREPARE_ENVIRONMENT" ]; then
 	_fix_permissions
 	if [ ! -f './config/database.yml' ]; then
 		file_env 'REDMINE_DB_MYSQL'
