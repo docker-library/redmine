@@ -22,7 +22,7 @@ passenger="$(wget -qO- 'https://rubygems.org/api/v1/gems/passenger.json' | sed -
 
 for version in "${versions[@]}"; do
 	fullVersion="$(echo $versionsPage | sed -r "s/.*($version\.[0-9]+)\.tar\.gz[^.].*/\1/" | sort -V | tail -1)"
-	md5="$(wget -qO- "$relasesUrl/redmine-$fullVersion.tar.gz.md5" | cut -d' ' -f1)"
+	sha256="$(wget -qO- "$relasesUrl/redmine-$fullVersion.tar.gz.sha256" | cut -d' ' -f1)"
 
 	rubyVersion="${rubyVersions[$version]:-$defaultRubyVersion}"
 
@@ -32,7 +32,7 @@ for version in "${versions[@]}"; do
 		-r
 		-e 's/%%REDMINE_VERSION%%/'"$fullVersion"'/'
 		-e 's/%%RUBY_VERSION%%/'"$rubyVersion"'/'
-		-e 's/%%REDMINE_DOWNLOAD_MD5%%/'"$md5"'/'
+		-e 's/%%REDMINE_DOWNLOAD_SHA256%%/'"$sha256"'/'
 		-e 's/%%REDMINE%%/redmine:'"$version"'/'
 		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/'
 	)
