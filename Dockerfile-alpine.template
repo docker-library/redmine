@@ -54,6 +54,8 @@ RUN set -eux; \
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
+# build for musl-libc, not glibc
+ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 RUN set -eux; \
 	\
 	apk add --no-cache --virtual .build-deps \
