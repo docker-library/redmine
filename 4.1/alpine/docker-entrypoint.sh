@@ -123,7 +123,7 @@ if [ -n "$isLikelyRedmine" ]; then
 	fi
 
 	# install additional gems for Gemfile.local and plugins
-	bundle check || bundle install --without development test
+	bundle check || bundle install
 
 	if [ ! -s config/secrets.yml ]; then
 		file_env 'REDMINE_SECRET_KEY_BASE'
