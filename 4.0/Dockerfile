@@ -20,6 +20,9 @@ RUN set -eux; \
 # and "ghostscript" for creating PDF thumbnails (in 4.1+)
 		gsfonts \
 		imagemagick \
+		\
+# https://github.com/docker-library/ruby/issues/344
+		shared-mime-info \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
