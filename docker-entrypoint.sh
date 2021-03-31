@@ -120,20 +120,8 @@ if [ -n "$isLikelyRedmine" ]; then
 			[ -n "$val" ] || continue
 			echo "  $var: \"$val\"" >> config/database.yml
 		done
-	else
-		# parse the database config to get the database adapter name
-		# so we can use the right Gemfile.lock
-		# (https://github.com/redmine/redmine/blob/dd24d5a004c6f0e137f0a3520d77ca3d704f1d66/Gemfile#L42-L71)
-		adapter="$(ruby -e "
-			require 'yaml'
-			require 'erb'
-			conf = YAML.load(ERB.new(File.read('./config/database.yml')).result)
-			puts conf[ENV['RAILS_ENV']]['adapter']
-		")"
 	fi
 
-	# ensure the right database adapter is active in the Gemfile.lock
-	cp "Gemfile.lock.${adapter}" Gemfile.lock
 	# install additional gems for Gemfile.local and plugins
 	bundle check || bundle install --without development test
 

@@ -72,13 +72,12 @@ RUN set -eux; \
 		zlib-dev \
 	; \
 	\
-	su-exec redmine bundle install --jobs "$(nproc)" --without development test; \
+	echo > ./config/database.yml; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
-		echo "$RAILS_ENV:" > ./config/database.yml; \
+		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
-		su-exec redmine bundle install --jobs "$(nproc)" --without development test; \
-		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
 	done; \
+	su-exec redmine bundle install --jobs "$(nproc)" --without development test; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
