@@ -113,13 +113,14 @@ RUN set -eux; \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
 	\
-	gosu redmine bundle install --jobs "$(nproc)" --without development test; \
+# fill up "database.yml" with bogus entries so the redmine Gemfile will pre-install all database adapter dependencies
+# https://github.com/redmine/redmine/blob/e9f9767089a4e3efbd73c35fc55c5c7eb85dd7d3/Gemfile#L50-L79
+	echo '# the following entries only exist to force `bundle install` to pre-install all database adapter dependencies -- they can be safely removed/ignored' > ./config/database.yml; \
 	for adapter in mysql2 postgresql sqlserver sqlite3; do \
-		echo "$RAILS_ENV:" > ./config/database.yml; \
+		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
-		gosu redmine bundle install --jobs "$(nproc)" --without development test; \
-		cp Gemfile.lock "Gemfile.lock.${adapter}"; \
 	done; \
+	gosu redmine bundle install --jobs "$(nproc)" --without development test; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
