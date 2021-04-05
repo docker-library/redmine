@@ -23,6 +23,8 @@ RUN set -eux; \
 # and "ghostscript" for creating PDF thumbnails (in 4.1+)
 		ghostscript-fonts \
 		imagemagick6 \
+# https://github.com/docker-library/ruby/issues/344
+		shared-mime-info \
 	;
 
 ENV RAILS_ENV production
