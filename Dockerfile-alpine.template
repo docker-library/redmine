@@ -24,8 +24,6 @@ RUN set -eux; \
 		ghostscript \
 		ghostscript-fonts \
 		imagemagick \
-# https://github.com/docker-library/ruby/issues/344
-		shared-mime-info \
 	;
 
 ENV RAILS_ENV production
