@@ -81,6 +81,9 @@ for version in "${versions[@]}"; do
 	parent="$(awk 'toupper($1) == "FROM" { print $2 }' "$version/Dockerfile")"
 	arches="${parentRepoToArches[$parent]}"
 
+	# the "gosu" Debian package isn't available on mips64le
+	arches="$(sed <<<" $arches " -e 's/ mips64le / /g')"
+
 	echo
 	cat <<-EOE
 		Tags: $(join ', ' "${versionAliases[@]}")
