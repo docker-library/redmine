@@ -26,8 +26,8 @@ RUN set -eux; \
 # grab tini for signal processing and zombie killing
 		tini \
 	; \
-# allow imagemagick to use ghostscript (4.1+)
-	sed -Ei 's@(<policy domain="coder" rights=)"none"( pattern="PDF"\s*/>)@\1"read"\2@' /etc/ImageMagick-6/policy.xml; \
+# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
+	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV RAILS_ENV production

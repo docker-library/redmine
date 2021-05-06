@@ -45,6 +45,7 @@ for version in "${versions[@]}"; do
 	if [ "$version" = 4.0 ]; then
 		commonSedArgs+=(
 			-e '/ghostscript /d'
+			-e '\!ImageMagick-6/policy\.xml!d'
 		)
 		alpineSedArgs+=(
 			-e 's/imagemagick/imagemagick6/g'

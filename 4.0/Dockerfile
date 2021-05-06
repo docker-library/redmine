@@ -25,7 +25,6 @@ RUN set -eux; \
 # grab tini for signal processing and zombie killing
 		tini \
 	; \
-	sed -Ei 's@(<policy domain="coder" rights=)"none"( pattern="PDF"\s*/>)@\1"read"\2@' /etc/ImageMagick-6/policy.xml; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV RAILS_ENV production
