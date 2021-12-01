@@ -1,4 +1,4 @@
-FROM ruby:2.6-slim-buster
+FROM ruby:2.6-slim-bullseye
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -63,9 +63,9 @@ RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
+		default-libmysqlclient-dev \
 		freetds-dev \
 		gcc \
-		libmariadbclient-dev \
 		libpq-dev \
 		libsqlite3-dev \
 		make \
