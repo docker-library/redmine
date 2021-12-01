@@ -68,43 +68,65 @@ join() {
 }
 
 for version in "${versions[@]}"; do
-	commit="$(dirCommit "$version")"
+	for variant in '' passenger alpine; do
+		dir="$version${variant:+/$variant}"
+		[ -f "$dir/Dockerfile" ] || continue
 
-	fullVersion="$(git show "$commit":"$version/Dockerfile" | awk '$1 == "ENV" && $2 == "REDMINE_VERSION" { print $3; exit }')"
+		commit="$(dirCommit "$dir")"
 
-	versionAliases=(
-		$fullVersion
-		$version
-		${aliases[$version]:-}
-	)
+		fullVersion="$(git show "$commit":"$dir/Dockerfile" | awk '$1 == "ENV" && $2 == "REDMINE_VERSION" { print $3; exit }')"
 
-	parent="$(awk 'toupper($1) == "FROM" { print $2 }' "$version/Dockerfile")"
-	arches="${parentRepoToArches[$parent]}"
+		versionAliases=(
+			$fullVersion
+			$version
+			${aliases[$version]:-}
+		)
 
-	# the "gosu" Debian package isn't available on mips64le
-	arches="$(sed <<<" $arches " -e 's/ mips64le / /g')"
+		if [ -n "$variant" ]; then
+			variantAliases=( "${versionAliases[@]/%/-$variant}" )
+			variantAliases=( "${variantAliases[@]//latest-/}" )
+		else
+			variantAliases=( "${versionAliases[@]}" )
+		fi
 
-	echo
-	cat <<-EOE
-		Tags: $(join ', ' "${versionAliases[@]}")
-		Architectures: $(join ', ' $arches)
-		GitCommit: $commit
-		Directory: $version
-	EOE
+		variantParent="$(awk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
 
-	for variant in passenger alpine; do
-		[ -f "$version/$variant/Dockerfile" ] || continue
+		suite="${variantParent#*:}" # "ruby:2.7-slim-bullseye", "2.7-alpine3.15"
+		suite="${suite##*-}" # "bullseye", "alpine3.15"
+		suite="${suite#alpine}" # "bullseye", "3.15"
 
-		commit="$(dirCommit "$version/$variant")"
+		case "$variant" in
+			alpine)
+				suite="alpine$suite" # "alpine3.8"
+				suiteAliases=( "${versionAliases[@]/%/-$suite}" )
+				;;
+			passenger)
+				# the "passenger" variant doesn't get any extra aliases (sorry)
+				suiteAliases=()
+				;;
+			*)
+				suiteAliases=( "${variantAliases[@]/%/-$suite}" )
+				;;
+		esac
+		suiteAliases=( "${suiteAliases[@]//latest-/}" )
+		variantAliases+=( "${suiteAliases[@]}" )
 
-		variantAliases=( "${versionAliases[@]/%/-$variant}" )
-		variantAliases=( "${variantAliases[@]//latest-/}" )
+		case "$variant" in
+			passenger) variantArches='amd64' ;; # https://github.com/docker-library/redmine/pull/87#issuecomment-323877678
+			*) variantArches="${parentRepoToArches[$variantParent]}" ;;
+		esac
+
+		if [ "$variant" != 'alpine' ]; then
+			# the "gosu" Debian package isn't available on mips64le
+			variantArches="$(sed <<<" $variantArches " -e 's/ mips64le / /g')"
+		fi
 
 		echo
 		cat <<-EOE
 			Tags: $(join ', ' "${variantAliases[@]}")
+			Architectures: $(join ', ' $variantArches)
 			GitCommit: $commit
-			Directory: $version/$variant
+			Directory: $dir
 		EOE
 	done
 done
