@@ -1,5 +1,5 @@
-#!/bin/bash
-set -eu
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
 declare -A aliases=(
 	[4.2]='4 latest'
@@ -69,6 +69,7 @@ join() {
 
 for version in "${versions[@]}"; do
 	# normally this would be down in the other loop, but "passenger" doesn't have it, so this is the simplest option (we just can't ever have "alpine" be out of sync, so we should remove it instead if it ever needs to be out of sync)
+	commit="$(dirCommit "$version")"
 	fullVersion="$(git show "$commit":"$version/Dockerfile" | awk '$1 == "ENV" && $2 == "REDMINE_VERSION" { print $3; exit }')"
 
 	versionAliases=(
