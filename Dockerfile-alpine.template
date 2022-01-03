@@ -14,6 +14,7 @@ RUN set -eux; \
 		tzdata \
 		wget \
 		\
+		breezy \
 		git \
 		mercurial \
 		openssh-client \
