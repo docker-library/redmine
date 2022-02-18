@@ -71,8 +71,6 @@ RUN set -eux; \
 		sqlite-dev \
 		ttf2ufm \
 		zlib-dev \
-# in 4.1+, imagemagick-dev is no longer necessary/used: https://www.redmine.org/issues/30492
-		imagemagick-dev \
 	; \
 	\
 	su-exec redmine bundle config --local without 'development test'; \
