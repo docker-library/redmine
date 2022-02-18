@@ -4,7 +4,6 @@ set -Eeuo pipefail
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
 defaultRubyVersion='2.7'
 declare -A rubyVersions=(
-	[4.0]='2.6'
 	[4.1]='2.6'
 )
 
@@ -37,26 +36,6 @@ for version in "${versions[@]}"; do
 		-e 's/%%REDMINE%%/redmine:'"$version"'/'
 		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/'
 	)
-	alpineSedArgs=()
-
-	# https://github.com/docker-library/redmine/pull/184
-	# https://www.redmine.org/issues/22481
-	# https://www.redmine.org/issues/30492
-	if [ "$version" = 4.0 ]; then
-		commonSedArgs+=(
-			-e '/ghostscript /d'
-			-e '\!ImageMagick-6/policy\.xml!d'
-		)
-		alpineSedArgs+=(
-			-e 's/imagemagick/imagemagick6/g'
-		)
-	else
-		commonSedArgs+=(
-			-e '/imagemagick-dev/d'
-			-e '/libmagickcore-dev/d'
-			-e '/libmagickwand-dev/d'
-		)
-	fi
 
 	mkdir -p "$version"
 	cp docker-entrypoint.sh "$version/"
@@ -68,5 +47,5 @@ for version in "${versions[@]}"; do
 	mkdir -p "$version/alpine"
 	cp docker-entrypoint.sh "$version/alpine/"
 	sed -i -e 's/gosu/su-exec/g' "$version/alpine/docker-entrypoint.sh"
-	sed "${commonSedArgs[@]}" "${alpineSedArgs[@]}" Dockerfile-alpine.template > "$version/alpine/Dockerfile"
+	sed "${commonSedArgs[@]}" Dockerfile-alpine.template > "$version/alpine/Dockerfile"
 done
