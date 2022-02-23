@@ -39,11 +39,12 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 4.1.5
-ENV REDMINE_DOWNLOAD_SHA256 624dfeab7db5cda35a03d791b5fa83a836717ca280856c51cd089ed638f8678e
+ENV REDMINE_VERSION 4.1.6
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/attachments/download/28858/redmine-4.1.6.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 b75dacdd61745284c433480c5efd9139d9da965e26ade4f6dc0d6d33be5410a2
 
 RUN set -eux; \
-	wget -O redmine.tar.gz "https://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz"; \
+	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
