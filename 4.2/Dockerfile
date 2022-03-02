@@ -44,8 +44,8 @@ RUN set -eux; \
 	chmod 1777 "$HOME"
 
 ENV REDMINE_VERSION 4.2.4
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/attachments/download/28862/redmine-4.2.4.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 7f50fd4a6cf1c1e48091a87696b813ba264e11f04dec67fb006858a1b49a5c7d
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-4.2.4.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 cf649f5d4ff783582f82bebd4a5099ef63acb3d5573bbe6b4bf64f293c61c9ce
 
 RUN set -eux; \
 # if we use wget here, we get certificate issues (https://github.com/docker-library/redmine/pull/249#issuecomment-984176479)
