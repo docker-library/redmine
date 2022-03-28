@@ -1,4 +1,4 @@
-FROM ruby:2.7-alpine3.15
+FROM ruby:3.1-alpine3.15
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -39,9 +39,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 4.2.5
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-4.2.5.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 d97084b0eaad7266056814a0c0aec2737f4d23b8f67ce90c01a79b2eb5605984
+ENV REDMINE_VERSION 5.0.0
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 7e840dec846646dae52fff5c631b135d1c915d6e03ea6f01ca8f12ad35803bef
 
 RUN set -eux; \
 	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \

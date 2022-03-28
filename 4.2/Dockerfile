@@ -77,6 +77,10 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*; \
 	\
 	gosu redmine bundle config --local without 'development test'; \
+# https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
+# ("gem puma" already exists in the Gemfile, but under "group :test" and we want it all the time)
+	puma="$(grep -E "^[[:space:]]*gem [:'\"]puma['\",[:space:]].*\$" Gemfile)"; \
+	{ echo; echo "$puma"; } | sed -re 's/^[[:space:]]+//' >> Gemfile; \
 # fill up "database.yml" with bogus entries so the redmine Gemfile will pre-install all database adapter dependencies
 # https://github.com/redmine/redmine/blob/e9f9767089a4e3efbd73c35fc55c5c7eb85dd7d3/Gemfile#L50-L79
 	echo '# the following entries only exist to force `bundle install` to pre-install all database adapter dependencies -- they can be safely removed/ignored' > ./config/database.yml; \

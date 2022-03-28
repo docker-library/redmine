@@ -2,8 +2,9 @@
 set -Eeuo pipefail
 
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
-defaultRubyVersion='2.7'
+defaultRubyVersion='3.1'
 declare -A rubyVersions=(
+	[4.2]='2.7'
 	[4.1]='2.6'
 )
 
@@ -50,7 +51,14 @@ for version in "${versions[@]}"; do
 
 	rubyVersion="${rubyVersions[$version]:-$defaultRubyVersion}"
 
-	echo "$version: $fullVersion (ruby $rubyVersion; passenger $passenger)"
+	text="ruby $rubyVersion"
+	doPassenger=
+	if [ "$version" = '4.1' ] || [ "$version" = '4.2' ]; then
+		text+="; passenger $passenger"
+		doPassenger=1
+	fi
+
+	echo "$version: $fullVersion ($text)"
 
 	commonSedArgs=(
 		-r
@@ -59,15 +67,18 @@ for version in "${versions[@]}"; do
 		-e 's!%%REDMINE_DOWNLOAD_URL%%!'"$url"'!'
 		-e 's/%%REDMINE_DOWNLOAD_SHA256%%/'"$sha256"'/'
 		-e 's/%%REDMINE%%/redmine:'"$version"'/'
-		-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/'
 	)
 
 	mkdir -p "$version"
 	cp docker-entrypoint.sh "$version/"
 	sed "${commonSedArgs[@]}" Dockerfile-debian.template > "$version/Dockerfile"
 
-	mkdir -p "$version/passenger"
-	sed "${commonSedArgs[@]}" Dockerfile-passenger.template > "$version/passenger/Dockerfile"
+	if [ -n "$doPassenger" ]; then
+		mkdir -p "$version/passenger"
+		sed "${commonSedArgs[@]}" \
+			-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/' \
+			Dockerfile-passenger.template > "$version/passenger/Dockerfile"
+	fi
 
 	mkdir -p "$version/alpine"
 	cp docker-entrypoint.sh "$version/alpine/"
