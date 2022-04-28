@@ -5,7 +5,6 @@ set -Eeuo pipefail
 defaultRubyVersion='3.1'
 declare -A rubyVersions=(
 	[4.2]='2.7'
-	[4.1]='2.6'
 )
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
@@ -53,7 +52,7 @@ for version in "${versions[@]}"; do
 
 	text="ruby $rubyVersion"
 	doPassenger=
-	if [ "$version" = '4.1' ] || [ "$version" = '4.2' ]; then
+	if [ "$version" = '4.2' ]; then
 		text+="; passenger $passenger"
 		doPassenger=1
 	fi
