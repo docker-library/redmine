@@ -73,6 +73,7 @@ RUN set -eux; \
 		libsqlite3-dev \
 		make \
 		patch \
+		xz-utils \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
 	\
