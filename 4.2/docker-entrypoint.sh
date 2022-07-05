@@ -34,9 +34,12 @@ _fix_permissions() {
 	if [ "$(id -u)" = '0' ]; then
 		find config files log public/plugin_assets \! -user redmine -exec chown redmine:redmine '{}' +
 	fi
-	# directories 755, files 644:
-	find config files log public/plugin_assets tmp -type d \! -perm 755 -exec chmod 755 '{}' + 2>/dev/null || :
-	find config files log public/plugin_assets tmp -type f \! -perm 644 -exec chmod 644 '{}' + 2>/dev/null || :
+	if [ -z "$CHMOD_DONE" ]; then
+		# directories 755, files 644:
+		find config files log public/plugin_assets tmp -type d \! -perm 755 -exec chmod 755 '{}' + 2>/dev/null || :
+		find config files log public/plugin_assets tmp -type f \! -perm 644 -exec chmod 644 '{}' + 2>/dev/null || :
+		export CHMOD_DONE='true'
+	fi
 }
 
 # allow the container to be started with `--user`
