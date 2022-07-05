@@ -9,6 +9,7 @@ RUN set -eux; \
 	apk add --no-cache \
 		bash \
 		ca-certificates \
+		findutils \
 		su-exec \
 		tini \
 		tzdata \
