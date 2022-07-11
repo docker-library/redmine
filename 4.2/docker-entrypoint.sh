@@ -31,12 +31,16 @@ esac
 
 _fix_permissions() {
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
+	local sep= args=( config files log public/plugin_assets tmp )
 	if [ "$(id -u)" = '0' ]; then
-		find config files log public/plugin_assets \! -user redmine -exec chown redmine:redmine '{}' +
+		args+=( $sep '(' '!' -user redmine -exec chown redmine:redmine '{}' + ')' )
+		: "${sep:=,}"
 	fi
 	# directories 755, files 644:
-	find config files log public/plugin_assets tmp -type d \! -perm 755 -exec chmod 755 '{}' + 2>/dev/null || :
-	find config files log public/plugin_assets tmp -type f \! -perm 644 -exec chmod 644 '{}' + 2>/dev/null || :
+	args+=( $sep '(' -type d '!' -perm 755 -exec sh -c 'chmod 755 "$@" 2>/dev/null || :' -- '{}' + ')' )
+	: "${sep:=,}"
+	args+=( $sep '(' -type f '!' -perm 644 -exec sh -c 'chmod 644 "$@" 2>/dev/null || :' -- '{}' + ')' )
+	find "${args[@]}"
 }
 
 # allow the container to be started with `--user`
