@@ -31,16 +31,21 @@ esac
 
 _fix_permissions() {
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-	local sep= args=( config files log public/plugin_assets tmp )
+	local dirs=( config log public/plugin_assets tmp ) args=()
 	if [ "$(id -u)" = '0' ]; then
-		args+=( $sep '(' '!' -user redmine -exec chown redmine:redmine '{}' + ')' )
-		: "${sep:=,}"
+		args+=( ${args[@]:+,} '(' '!' -user redmine -exec chown redmine:redmine '{}' + ')' )
+
+		# https://github.com/docker-library/redmine/issues/268 - scanning "files" might be *really* expensive, so we should skip it if it seems like it's "already correct"
+		local filesOwnerMode
+		filesOwnerMode="$(stat -c '%U:%a' files)"
+		if [ "$files" != 'redmine:755' ]; then
+			dirs+=( files )
+		fi
 	fi
 	# directories 755, files 644:
-	args+=( $sep '(' -type d '!' -perm 755 -exec sh -c 'chmod 755 "$@" 2>/dev/null || :' -- '{}' + ')' )
-	: "${sep:=,}"
-	args+=( $sep '(' -type f '!' -perm 644 -exec sh -c 'chmod 644 "$@" 2>/dev/null || :' -- '{}' + ')' )
-	find "${args[@]}"
+	args+=( ${args[@]:+,} '(' -type d '!' -perm 755 -exec sh -c 'chmod 755 "$@" 2>/dev/null || :' -- '{}' + ')' )
+	args+=( ${args[@]:+,} '(' -type f '!' -perm 644 -exec sh -c 'chmod 644 "$@" 2>/dev/null || :' -- '{}' + ')' )
+	find "${dirs[@]}" "${args[@]}"
 }
 
 # allow the container to be started with `--user`
