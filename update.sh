@@ -4,7 +4,6 @@ set -Eeuo pipefail
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
 defaultRubyVersion='3.1'
 declare -A rubyVersions=(
-	[4.2]='2.7'
 )
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
@@ -26,8 +25,6 @@ allVersions="$(
 		-rne 's/.*redmine-([0-9.]+)[.]tar[.]gz.*/\1/p' \
 		| sort -ruV
 )"
-
-passenger="$(curl -fsSL 'https://rubygems.org/api/v1/gems/passenger.json' | sed -r 's/^.*"version":"([^"]+)".*$/\1/')"
 
 for version in "${versions[@]}"; do
 	ourVersions="$(grep -E "^$version[.]" <<<"$allVersions")"
@@ -51,11 +48,6 @@ for version in "${versions[@]}"; do
 	rubyVersion="${rubyVersions[$version]:-$defaultRubyVersion}"
 
 	text="ruby $rubyVersion"
-	doPassenger=
-	if [ "$version" = '4.2' ]; then
-		text+="; passenger $passenger"
-		doPassenger=1
-	fi
 
 	echo "$version: $fullVersion ($text)"
 
@@ -71,13 +63,6 @@ for version in "${versions[@]}"; do
 	mkdir -p "$version"
 	cp docker-entrypoint.sh "$version/"
 	sed "${commonSedArgs[@]}" Dockerfile-debian.template > "$version/Dockerfile"
-
-	if [ -n "$doPassenger" ]; then
-		mkdir -p "$version/passenger"
-		sed "${commonSedArgs[@]}" \
-			-e 's/%%PASSENGER_VERSION%%/'"$passenger"'/' \
-			Dockerfile-passenger.template > "$version/passenger/Dockerfile"
-	fi
 
 	mkdir -p "$version/alpine"
 	cp docker-entrypoint.sh "$version/alpine/"
