@@ -1,21 +1,23 @@
-FROM ruby:3.1-alpine3.18
+#
+# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
+#
+# PLEASE DO NOT EDIT IT DIRECTLY.
+#
+
+FROM ruby:3.1-slim-bookworm
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
-# alpine already has a gid 999, so we'll use the next id
-RUN addgroup -S -g 1000 redmine && adduser -S -H -G redmine -u 999 redmine
+RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 
 RUN set -eux; \
-	apk add --no-cache \
-		bash \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
 		ca-certificates \
-		findutils \
-		su-exec \
-		tini \
-		tzdata \
+		curl \
 		wget \
 		\
-		breezy \
+		bzr \
 		git \
 		mercurial \
 		openssh-client \
@@ -24,9 +26,16 @@ RUN set -eux; \
 # we need "gsfonts" for generating PNGs of Gantt charts
 # and "ghostscript" for creating PDF thumbnails (in 4.1+)
 		ghostscript \
-		ghostscript-fonts \
+		gsfonts \
 		imagemagick \
-	;
+# grab gosu for easy step-down from root
+		gosu \
+# grab tini for signal processing and zombie killing
+		tini \
+	; \
+# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
+	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
+	rm -rf /var/lib/apt/lists/*
 
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
@@ -45,7 +54,8 @@ ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.6.tar.gz
 ENV REDMINE_DOWNLOAD_SHA256 488fe08f37a8eb1011415922a8ea743b7f38d8a7a5f8822950a34a375dcf08ee
 
 RUN set -eux; \
-	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
+# if we use wget here, we get certificate issues (https://github.com/docker-library/redmine/pull/249#issuecomment-984176479)
+	curl -fL -o redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
@@ -57,25 +67,23 @@ RUN set -eux; \
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
-# build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
-ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 RUN set -eux; \
 	\
-	apk add --no-cache --virtual .build-deps \
-		coreutils \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		default-libmysqlclient-dev \
 		freetds-dev \
 		gcc \
+		libpq-dev \
+		libsqlite3-dev \
 		make \
-		mariadb-dev \
-		musl-dev \
 		patch \
-		postgresql-dev \
-		sqlite-dev \
-		ttf2ufm \
-		zlib-dev \
+		xz-utils \
 	; \
+	rm -rf /var/lib/apt/lists/*; \
 	\
-	su-exec redmine bundle config --local without 'development test'; \
+	gosu redmine bundle config --local without 'development test'; \
 # https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
 # ("gem puma" already exists in the Gemfile, but under "group :test" and we want it all the time)
 	puma="$(grep -E "^[[:space:]]*gem [:'\"]puma['\",[:space:]].*\$" Gemfile)"; \
@@ -87,24 +95,24 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
-	su-exec redmine bundle install --jobs "$(nproc)"; \
+	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
-# this requires coreutils because "chmod +X" in busybox will remove +x on files (and coreutils leaves files alone with +X)
 	rm -rf ~redmine/.bundle; \
 	\
-# https://github.com/naitoh/rbpdf/issues/31
-	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
-	\
-	runDeps="$( \
-		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
-		| tr ',' '\n' \
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); print so }' \
 		| sort -u \
-		| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
-	)"; \
-	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps
+		| xargs -r dpkg-query --search \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
 VOLUME /usr/src/redmine/files
 

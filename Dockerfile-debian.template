@@ -1,4 +1,4 @@
-FROM ruby:%%RUBY_VERSION%%-slim-bookworm
+FROM ruby:{{ .ruby.version }}-slim-{{ env.variant }}
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -43,9 +43,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION %%REDMINE_VERSION%%
-ENV REDMINE_DOWNLOAD_URL %%REDMINE_DOWNLOAD_URL%%
-ENV REDMINE_DOWNLOAD_SHA256 %%REDMINE_DOWNLOAD_SHA256%%
+ENV REDMINE_VERSION {{ .version }}
+ENV REDMINE_DOWNLOAD_URL {{ .downloadUrl }}
+ENV REDMINE_DOWNLOAD_SHA256 {{ .sha256 }}
 
 RUN set -eux; \
 # if we use wget here, we get certificate issues (https://github.com/docker-library/redmine/pull/249#issuecomment-984176479)
