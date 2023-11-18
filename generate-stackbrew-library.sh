@@ -9,11 +9,13 @@ declare -A aliases=(
 self="$(basename "$BASH_SOURCE")"
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
-versions=( */ )
-versions=( "${versions[@]%/}" )
+if [ "$#" -eq 0 ]; then
+	versions="$(jq -r 'keys | map(@sh) | join(" ")' versions.json)"
+	eval "set -- $versions"
+fi
 
 # sort version numbers with highest first
-IFS=$'\n'; versions=( $(echo "${versions[*]}" | sort -rV) ); unset IFS
+IFS=$'\n'; set -- $(sort -rV <<<"$*"); unset IFS
 
 # get the most recent commit which modified any of "$@"
 fileCommit() {
@@ -68,61 +70,49 @@ join() {
 	echo "${out#$sep}"
 }
 
-for version in "${versions[@]}"; do
-	# normally this would be down in the other loop, but "passenger" doesn't have it, so this is the simplest option (we just can't ever have "alpine" be out of sync, so we should remove it instead if it ever needs to be out of sync)
-	commit="$(dirCommit "$version")"
-	fullVersion="$(git show "$commit":"$version/Dockerfile" | awk '$1 == "ENV" && $2 == "REDMINE_VERSION" { print $3; exit }')"
+for version; do
+	export version
 
-	versionAliases=(
-		$fullVersion
+	variants="$(jq -r '.[env.version].variants | map(@sh) | join(" ")' versions.json)"
+	eval "variants=( $variants )"
+
+	alpine="$(jq -r '.[env.version].alpine' versions.json)"
+	debian="$(jq -r '.[env.version].debian' versions.json)"
+
+	fullVersion="$(jq -r '.[env.version].version' versions.json)"
+
+	versionAliases=()
+	while [ "$fullVersion" != "$version" -a "${fullVersion%[.]*}" != "$fullVersion" ]; do
+		versionAliases+=( $fullVersion )
+		fullVersion="${fullVersion%[.]*}"
+	done
+	versionAliases+=(
 		$version
 		${aliases[$version]:-}
 	)
 
-	for variant in '' passenger alpine; do
-		dir="$version${variant:+/$variant}"
-		[ -f "$dir/Dockerfile" ] || continue
-
+	for variant in "${variants[@]}"; do
+		dir="$version/$variant"
 		commit="$(dirCommit "$dir")"
 
-		if [ -n "$variant" ]; then
-			variantAliases=( "${versionAliases[@]/%/-$variant}" )
-			variantAliases=( "${variantAliases[@]//latest-/}" )
-		else
-			variantAliases=( "${versionAliases[@]}" )
-		fi
-
 		variantParent="$(awk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
+		variantArches="${parentRepoToArches[$variantParent]}"
 
-		suite="${variantParent#*:}" # "ruby:2.7-slim-bullseye", "2.7-alpine3.15"
-		suite="${suite##*-}" # "bullseye", "alpine3.15"
-		suite="${suite#alpine}" # "bullseye", "3.15"
-
-		case "$variant" in
-			alpine)
-				suite="alpine$suite" # "alpine3.8"
-				suiteAliases=( "${versionAliases[@]/%/-$suite}" )
-				;;
-			passenger)
-				# the "passenger" variant doesn't get any extra aliases (sorry)
-				suiteAliases=()
-				;;
-			*)
-				suiteAliases=( "${variantAliases[@]/%/-$suite}" )
-				;;
-		esac
-		suiteAliases=( "${suiteAliases[@]//latest-/}" )
-		variantAliases+=( "${suiteAliases[@]}" )
+		variantAliases=( "${versionAliases[@]/%/-$variant}" )
+		variantAliases=( "${variantAliases[@]//latest-/}" )
 
 		case "$variant" in
-			passenger) variantArches='amd64' ;; # https://github.com/docker-library/redmine/pull/87#issuecomment-323877678
-			*) variantArches="${parentRepoToArches[$variantParent]}" ;;
+			"$debian")
+				variantAliases=(
+					"${versionAliases[@]}"
+					"${variantAliases[@]}"
+				)
+				;;
+			alpine"$alpine")
+				variantAliases+=( "${versionAliases[@]/%/-alpine}" )
+				variantAliases=( "${variantAliases[@]//latest-/}" )
+				;;
 		esac
-
-		if [ "$variant" != 'alpine' ]; then
-			# the "gosu" Debian package isn't available on mips64le
-			variantArches="$(sed <<<" $variantArches " -e 's/ mips64le / /g')"
-		fi
 
 		echo
 		cat <<-EOE
