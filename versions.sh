@@ -46,32 +46,33 @@ fetch_package_list() {
 
 get_version() {
 	local version="$1"; shift
+	fetch_package_list
 
-    fullVersion="$(
-        sed <<<"$packages" \
-            -rne 's/.*redmine-([0-9.]+)[.]tar[.]gz.*/\1/p' \
-            | cut -d/ -f3 \
-            | cut -d^ -f1 \
-            | grep -e "^$version" \
-            | sort -urV \
-            | head -1
-    )"
+	fullVersion="$(
+		sed <<<"$packages" \
+			-rne 's/.*redmine-([0-9.]+)[.]tar[.]gz.*/\1/p' \
+			| cut -d/ -f3 \
+			| cut -d^ -f1 \
+			| grep -e "^$version" \
+			| sort -urV \
+			| head -1
+	)"
 
 	if [ -z "$fullVersion" ]; then
 		echo >&2 "error: failed to find full version for '$version'"
 		exit 1
 	fi
 
-    downloadUrl="$releasesUrl/redmine-$fullVersion.tar.gz"
-    sha256="$(curl -fsSL $downloadUrl.sha256 | awk '{print $1}')"
+	downloadUrl="$releasesUrl/redmine-$fullVersion.tar.gz"
+	sha256="$(curl -fsSL $downloadUrl.sha256 | awk '{print $1}')"
 }
 
 for version in "${versions[@]}"; do
 	export version
 
-    versionAlpineVersion="${alpineVersions[$version]:-$defaultAlpineVersion}"
+	versionAlpineVersion="${alpineVersions[$version]:-$defaultAlpineVersion}"
 	versionDebianSuite="${debianSuites[$version]:-$defaultDebianSuite}"
-    versionRubyVersion="${rubyVersions[$version]:-$defaultRubyVersion}"
+	versionRubyVersion="${rubyVersions[$version]:-$defaultRubyVersion}"
 	export versionAlpineVersion versionDebianSuite versionRubyVersion
 
 	doc="$(jq -nc '{
@@ -79,7 +80,6 @@ for version in "${versions[@]}"; do
 		debian: env.versionDebianSuite,
 	}')"
 
-	fetch_package_list
 	get_version "$version"
 
 	for suite in "${supportedDebianSuites[@]}"; do
@@ -97,7 +97,7 @@ for version in "${versions[@]}"; do
 
 	echo "$version: $fullVersion"
 
-    export fullVersion downloadUrl sha256
+	export fullVersion downloadUrl sha256
 	json="$(jq <<<"$json" -c --argjson doc "$doc" '
 		.[env.version] = ($doc + {
 			version: env.fullVersion,
