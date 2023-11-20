@@ -65,7 +65,8 @@ RUN set -eux; \
 	echo 'config.logger = Logger.new(STDOUT)' > config/additional_environment.rb; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX config db sqlite; \
-	find log tmp -type d -exec chmod 1777 '{}' +
+	find log tmp -type d -exec chmod 1777 '{}' +; \
+	echo '{"spdxVersion":"SPDX-2.3","SPDXID":"SPDXRef-DOCUMENT","name":"redmine-sbom","packages":[{"name":"redmine","versionInfo":"5.0.6","SPDXID":"SPDXRef-Package--redmine","externalRefs":[{"referenceCategory":"PACKAGE-MANAGER","referenceType":"purl","referenceLocator":"pkg:generic/redmine@5.0.6?os_name=debian&os_version=bookworm"}],"licenseDeclared":"GPL-2.0-only"}]}' > redmine.spdx.json;
 
 RUN set -eux; \
 	\
