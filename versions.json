@@ -18,7 +18,7 @@
     "debian": "bookworm",
     "downloadUrl": "https://www.redmine.org/releases/redmine-5.1.1.tar.gz",
     "ruby": {
-      "version": "3.1"
+      "version": "3.2"
     },
     "sha256": "edf3095746effd04ad5140681d618f5fa8d06be09c47b6f8b615dcad0b753e6e",
     "variants": [
