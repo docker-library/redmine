@@ -105,6 +105,8 @@ RUN set -eux; \
 		gcc \
 		libpq-dev \
 		libsqlite3-dev \
+		libxml2-dev \
+		libxslt-dev \
 		make \
 		patch \
 		pkgconf \
@@ -124,6 +126,8 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
+# nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
+	gosu redmine bundle config build.nokogiri --use-system-libraries; \
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
