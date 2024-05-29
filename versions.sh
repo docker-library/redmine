@@ -5,7 +5,8 @@ supportedDebianSuites=(
 	bookworm
 )
 supportedAlpineVersions=(
-	3.18
+	3.20
+	3.19
 )
 
 defaultDebianSuite="${supportedDebianSuites[0]}"
