@@ -2,17 +2,17 @@
   "5.0": {
     "alpine": "3.20",
     "debian": "bookworm",
-    "downloadUrl": "https://www.redmine.org/releases/redmine-5.0.8.tar.gz",
+    "downloadUrl": "https://www.redmine.org/releases/redmine-5.0.9.tar.gz",
     "ruby": {
       "version": "3.1"
     },
-    "sha256": "1eda410840a21ab0f6965a378699a65588b6785db95eaf6494c6c9bc51b5bf6e",
+    "sha256": "a7d9b05ff258ab2c106ba5d45589eeaec3e7ebb35427aa73a037ff3ae71251df",
     "variants": [
       "bookworm",
       "alpine3.20",
       "alpine3.19"
     ],
-    "version": "5.0.8"
+    "version": "5.0.9"
   },
   "5.1": {
     "alpine": "3.20",
