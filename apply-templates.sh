@@ -53,12 +53,9 @@ for version; do
 
 		mkdir -p "$dir"
 
-		cp -f docker-entrypoint.sh "$dir/"
-
 		case "$variant" in
 			alpine*)
 				template='Dockerfile-alpine.template'
-				sed -i -e 's/gosu/su-exec/g' "$dir/docker-entrypoint.sh"
 				;;
 			*)
 				template='Dockerfile-debian.template'
@@ -69,5 +66,7 @@ for version; do
 			generated_warning
 			gawk -f "$jqt" "$template"
 		} > "$dir/Dockerfile"
+
+		cp -a docker-entrypoint.sh "$dir/"
 	done
 done
