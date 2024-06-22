@@ -64,7 +64,6 @@ RUN set -eux; \
 	gosu --version; \
 	gosu nobody true
 
-
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
 

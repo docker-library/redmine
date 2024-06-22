@@ -16,7 +16,6 @@ RUN set -eux; \
 		bash \
 		ca-certificates \
 		findutils \
-		su-exec \
 		tini \
 		tzdata \
 		wget \
@@ -33,6 +32,34 @@ RUN set -eux; \
 		ghostscript-fonts \
 		imagemagick \
 	;
+
+# grab gosu for easy step-down from root
+# https://github.com/tianon/gosu/releases
+ENV GOSU_VERSION 1.17
+RUN set -eux; \
+	\
+	apk add --no-cache --virtual .gosu-deps \
+		ca-certificates \
+		dpkg \
+		gnupg \
+	; \
+	\
+	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
+	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
+	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
+	export GNUPGHOME="$(mktemp -d)"; \
+	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
+	gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
+	gpgconf --kill all; \
+	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
+	\
+	apk del --no-network .gosu-deps; \
+	\
+# smoke test
+	chmod +x /usr/local/bin/gosu; \
+	gosu --version; \
+	gosu nobody true
+RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
@@ -81,7 +108,7 @@ RUN set -eux; \
 		zlib-dev \
 	; \
 	\
-	su-exec redmine bundle config --local without 'development test'; \
+	gosu redmine bundle config --local without 'development test'; \
 # https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
 # ("gem puma" already exists in the Gemfile, but under "group :test" and we want it all the time)
 	puma="$(grep -E "^[[:space:]]*gem [:'\"]puma['\",[:space:]].*\$" Gemfile)"; \
@@ -93,7 +120,7 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
-	su-exec redmine bundle install --jobs "$(nproc)"; \
+	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
