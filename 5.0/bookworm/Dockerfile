@@ -76,9 +76,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 5.0.9
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.9.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 a7d9b05ff258ab2c106ba5d45589eeaec3e7ebb35427aa73a037ff3ae71251df
+ENV REDMINE_VERSION 5.0.10
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.10.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 cb0df0f6feb5a3198e59e36b239e9a1110011ed7078316bd1c8058247f5b9506
 
 RUN set -eux; \
 # if we use wget here, we get certificate issues (https://github.com/docker-library/redmine/pull/249#issuecomment-984176479)
