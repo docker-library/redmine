@@ -76,6 +76,7 @@ RUN set -eux; \
 ENV REDMINE_VERSION 5.1.4
 ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.1.4.tar.gz
 ENV REDMINE_DOWNLOAD_SHA256 f5738d6a107f231b8f4b0ae5410e0c45742d75e0ef30c4b31a27c0ac9dafd51c
+ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
 	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
@@ -84,8 +85,6 @@ RUN set -eux; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
 	chown -R redmine:redmine ./; \
-# log to STDOUT (https://github.com/docker-library/redmine/issues/108)
-	echo 'config.logger = Logger.new(STDOUT)' > config/additional_environment.rb; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
