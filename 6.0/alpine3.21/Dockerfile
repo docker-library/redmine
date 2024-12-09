@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM ruby:3.1-alpine3.19
+FROM ruby:3.3-alpine3.21
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -59,7 +59,6 @@ RUN set -eux; \
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
@@ -73,9 +72,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 5.0.10
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.10.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 cb0df0f6feb5a3198e59e36b239e9a1110011ed7078316bd1c8058247f5b9506
+ENV REDMINE_VERSION 6.0.1
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.0.1.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 dcee3f15e3c15b9dbefba1fa9d8dfa12e89a7d40b3f3ed82da903d80d2548030
 
 RUN set -eux; \
 	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
