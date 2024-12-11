@@ -119,6 +119,9 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
+	# Fix incompatibility with sqlite 1.4 in alpine 3.21
+	grep -q 'sqlite3", "~> 1.4.0"' Gemfile; \
+	sed -i -e 's/"sqlite3", "~> 1.4.0"/"sqlite3", "~> 1.5.0"/g' Gemfile; \
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
