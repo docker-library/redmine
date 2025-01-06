@@ -127,7 +127,12 @@ if [ -n "$isLikelyRedmine" ]; then
 			env="REDMINE_DB_${var^^}"
 			val="${!env}"
 			[ -n "$val" ] || continue
-			echo "  $var: \"$val\"" >> config/database.yml
+			if [ "$var" != 'adapter' ]; then
+				# https://github.com/docker-library/redmine/issues/353 🙃
+				val='"'"$val"'"'
+				# (only add double quotes to every value *except* `adapter: xxx`)
+			fi
+			echo "  $var: $val" >> config/database.yml
 		done
 	fi
 
