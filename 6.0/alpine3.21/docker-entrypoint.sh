@@ -157,4 +157,9 @@ if [ -n "$isLikelyRedmine" ]; then
 	rm -f tmp/pids/server.pid
 fi
 
+DIR=/docker-entrypoint.d
+if [[ -d "$DIR" ]]; then
+    /bin/run-parts --verbose "$DIR"
+fi
+
 exec "$@"
