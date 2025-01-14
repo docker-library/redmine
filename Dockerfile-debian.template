@@ -99,6 +99,7 @@ RUN set -eux; \
 		libsqlite3-dev \
 		libxml2-dev \
 		libxslt-dev \
+		libyaml-dev \
 		make \
 		patch \
 		pkgconf \
