@@ -104,6 +104,7 @@ RUN set -eux; \
 		postgresql-dev \
 		sqlite-dev \
 		ttf2ufm \
+		yaml-dev \
 		zlib-dev \
 	; \
 	\
