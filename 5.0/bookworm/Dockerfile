@@ -13,29 +13,24 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		ca-certificates \
-		curl \
-		wget \
-		\
 		bzr \
+		ca-certificates \
+		ghostscript \
 		git \
+		gsfonts \
+		imagemagick \
 		mercurial \
 		openssh-client \
 		subversion \
-		\
-# we need "gsfonts" for generating PNGs of Gantt charts
-# and "ghostscript" for creating PDF thumbnails (in 4.1+)
-		ghostscript \
-		gsfonts \
-		imagemagick \
-# grab tini for signal processing and zombie killing
 		tini \
+		wget \
 	; \
 # allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
 	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
 	rm -rf /var/lib/apt/lists/*
 
 # grab gosu for easy step-down from root
+# https://github.com/tianon/gosu/releases
 ENV GOSU_VERSION 1.17
 RUN set -eux; \
 	\
@@ -82,20 +77,22 @@ ENV REDMINE_DOWNLOAD_SHA256 cb0df0f6feb5a3198e59e36b239e9a1110011ed7078316bd1c80
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
-# if we use wget here, we get certificate issues (https://github.com/docker-library/redmine/pull/249#issuecomment-984176479)
-	curl -fL -o redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
+	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
 	# https://www.redmine.org/issues/42113 (aka https://github.com/rails/rails/issues/54260)
 	# 5.1: https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4
 	# 5.0: https://github.com/redmine/redmine/commit/f27570120b7a672249bfebfe4d62da506785e146
+	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends patch; \
 	wget -O 42113.patch 'https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4.patch?full_index=1'; \
 	echo 'e352699be3995ff6e3b0066a478e377922fa95ce9fe4729240cd98dcee3c8575 *42113.patch' | sha256sum -c -; \
 	patch -p1 < 42113.patch; \
 	rm 42113.patch; \
-	apt-get purge -y --auto-remove patch; \
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
@@ -105,7 +102,6 @@ RUN set -eux; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
 RUN set -eux; \
-	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \

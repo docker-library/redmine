@@ -14,23 +14,19 @@ RUN addgroup -S -g 1000 redmine && adduser -S -H -G redmine -u 999 redmine
 RUN set -eux; \
 	apk add --no-cache \
 		bash \
+		breezy \
 		ca-certificates \
 		findutils \
-		tini \
-		tzdata \
-		wget \
-		\
-		breezy \
+		ghostscript \
+		ghostscript-fonts \
 		git \
+		imagemagick \
 		mercurial \
 		openssh-client \
 		subversion \
-		\
-# we need "gsfonts" for generating PNGs of Gantt charts
-# and "ghostscript" for creating PDF thumbnails (in 4.1+)
-		ghostscript \
-		ghostscript-fonts \
-		imagemagick \
+		tini \
+		tzdata \
+		wget \
 	;
 
 # grab gosu for easy step-down from root
@@ -39,7 +35,6 @@ ENV GOSU_VERSION 1.17
 RUN set -eux; \
 	\
 	apk add --no-cache --virtual .gosu-deps \
-		ca-certificates \
 		dpkg \
 		gnupg \
 	; \
@@ -101,7 +96,6 @@ RUN set -eux; \
 # build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
 ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 RUN set -eux; \
-	\
 	apk add --no-cache --virtual .build-deps \
 		coreutils \
 		freetds-dev \
@@ -133,7 +127,6 @@ RUN set -eux; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
-# this requires coreutils because "chmod +X" in busybox will remove +x on files (and coreutils leaves files alone with +X)
 	rm -rf ~redmine/.bundle; \
 	\
 # https://github.com/naitoh/rbpdf/issues/31
