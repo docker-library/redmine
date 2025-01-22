@@ -139,17 +139,24 @@ if [ -n "$isLikelyRedmine" ]; then
 	# install additional gems for Gemfile.local and plugins
 	bundle check || bundle install
 
-	if [ ! -s config/secrets.yml ]; then
-		file_env 'REDMINE_SECRET_KEY_BASE'
-		if [ -n "$REDMINE_SECRET_KEY_BASE" ]; then
-			cat > 'config/secrets.yml' <<-YML
-				$RAILS_ENV:
-				  secret_key_base: "$REDMINE_SECRET_KEY_BASE"
-			YML
-		elif [ ! -f config/initializers/secret_token.rb ]; then
-			rake generate_secret_token
-		fi
+	file_env 'REDMINE_SECRET_KEY_BASE'
+	# just use the rails variable rather than trying to put it into a yml file
+	# https://github.com/rails/rails/blob/6-1-stable/railties/lib/rails/application.rb#L438
+	# https://github.com/rails/rails/blob/1aa9987169213ce5ce43c20b2643bc64c235e792/railties/lib/rails/application.rb#L484 (rails 7.1-stable)
+	if [ -n "${SECRET_KEY_BASE}" ] && [ -n "${REDMINE_SECRET_KEY_BASE}" ]; then
+		echo >&2
+		echo >&2 'warning: both SECRET_KEY_BASE and REDMINE_SECRET_KEY_BASE{_FILE} set, only SECRET_KEY_BASE will apply'
+		echo >&2
 	fi
+	: "${SECRET_KEY_BASE:=$REDMINE_SECRET_KEY_BASE}"
+	export SECRET_KEY_BASE
+	# generate SECRET_KEY_BASE if not set; this is not recommended unless the secret_token.rb is saved when container is recreated
+	if [ -z "$SECRET_KEY_BASE" ] && [ ! -f config/initializers/secret_token.rb ]; then
+		echo >&2 'warning: no *SECRET_KEY_BASE set; running `rake generate_secret_token` to create one in "config/initializers/secret_token.rb"'
+		unset SECRET_KEY_BASE # just in case
+		rake generate_secret_token
+	fi
+
 	if [ "$1" != 'rake' -a -z "$REDMINE_NO_DB_MIGRATE" ]; then
 		rake db:migrate
 	fi

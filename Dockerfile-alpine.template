@@ -53,7 +53,7 @@ RUN set -eux; \
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-{{ if [ "5.0", "5.1" ] | index(env.version) then ( -}}
+{{ if env.version | IN("5.0", "5.1") then ( -}}
 RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 {{ ) else "" end -}}
 
@@ -78,6 +78,17 @@ RUN set -eux; \
 	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
+{{ if .version | IN("5.0.10", "5.1.5") then ( -}}
+	# https://www.redmine.org/issues/42113 (aka https://github.com/rails/rails/issues/54260)
+	# 5.1: https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4
+	# 5.0: https://github.com/redmine/redmine/commit/f27570120b7a672249bfebfe4d62da506785e146
+	apk add --no-cache patch; \
+	wget -O 42113.patch 'https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4.patch?full_index=1'; \
+	echo 'e352699be3995ff6e3b0066a478e377922fa95ce9fe4729240cd98dcee3c8575 *42113.patch' | sha256sum -c -; \
+	patch -p1 < 42113.patch; \
+	rm 42113.patch; \
+	apk del --no-network patch; \
+{{ ) else "" end -}}
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
 	chown -R redmine:redmine ./; \
