@@ -53,18 +53,9 @@ for version; do
 
 		mkdir -p "$dir"
 
-		case "$variant" in
-			alpine*)
-				template='Dockerfile-alpine.template'
-				;;
-			*)
-				template='Dockerfile-debian.template'
-				;;
-		esac
-
 		{
 			generated_warning
-			gawk -f "$jqt" "$template"
+			gawk -f "$jqt" Dockerfile.template
 		} > "$dir/Dockerfile"
 
 		cp -a docker-entrypoint.sh "$dir/"

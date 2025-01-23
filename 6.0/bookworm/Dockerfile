@@ -13,29 +13,24 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		ca-certificates \
-		curl \
-		wget \
-		\
 		bzr \
+		ca-certificates \
+		ghostscript \
 		git \
+		gsfonts \
+		imagemagick \
 		mercurial \
 		openssh-client \
 		subversion \
-		\
-# we need "gsfonts" for generating PNGs of Gantt charts
-# and "ghostscript" for creating PDF thumbnails (in 4.1+)
-		ghostscript \
-		gsfonts \
-		imagemagick \
-# grab tini for signal processing and zombie killing
 		tini \
+		wget \
 	; \
 # allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
 	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
 	rm -rf /var/lib/apt/lists/*
 
 # grab gosu for easy step-down from root
+# https://github.com/tianon/gosu/releases
 ENV GOSU_VERSION 1.17
 RUN set -eux; \
 	\
@@ -82,8 +77,7 @@ ENV REDMINE_DOWNLOAD_SHA256 d06e8b1b0c0c9210d2ed6207d2a3f729c26a996255e47c3b0bd4
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
-# if we use wget here, we get certificate issues (https://github.com/docker-library/redmine/pull/249#issuecomment-984176479)
-	curl -fL -o redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
+	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
@@ -94,7 +88,6 @@ RUN set -eux; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
 RUN set -eux; \
-	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \

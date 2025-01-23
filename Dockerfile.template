@@ -1,42 +1,88 @@
+{{
+	def is_alpine:
+		env.variant | startswith("alpine")
+-}}
+{{ if is_alpine then ( -}}
 FROM ruby:{{ .ruby.version }}-{{ env.variant }}
+{{ ) else ( -}}
+FROM ruby:{{ .ruby.version }}-slim-{{ env.variant }}
+{{ ) end -}}
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
+{{ if is_alpine then ( -}}
 # alpine already has a gid 999, so we'll use the next id
 RUN addgroup -S -g 1000 redmine && adduser -S -H -G redmine -u 999 redmine
+{{ ) else ( -}}
+RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
+{{ ) end -}}
 
+{{
+	[
+		# common packages
+		"ca-certificates",
+		"ghostscript", # for creating PDF thumbnails
+		"git",
+		"imagemagick",
+		"mercurial",
+		"openssh-client",
+		"subversion",
+		"tini", # grab tini for signal processing and zombie killing
+		"wget",
+		if is_alpine then
+			# alpine packages
+			"bash",
+			"breezy",
+			"findutils",
+			"ghostscript-fonts",  # for generating PNGs of Gantt charts
+			"tzdata",
+			empty
+		else
+			# debian packages
+			"bzr",
+			"gsfonts", # for generating PNGs of Gantt charts
+			empty
+		end
+	] | sort | (
+-}}
 RUN set -eux; \
+{{ if is_alpine then ( -}}
 	apk add --no-cache \
-		bash \
-		ca-certificates \
-		findutils \
-		tini \
-		tzdata \
-		wget \
-		\
-		breezy \
-		git \
-		mercurial \
-		openssh-client \
-		subversion \
-		\
-# we need "gsfonts" for generating PNGs of Gantt charts
-# and "ghostscript" for creating PDF thumbnails (in 4.1+)
-		ghostscript \
-		ghostscript-fonts \
-		imagemagick \
+{{ map( -}}
+		{{ . }} \
+{{ ) | add -}}
 	;
+{{ ) else ( -}}
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+{{ map( -}}
+		{{ . }} \
+{{ ) | add -}}
+	; \
+# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
+	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
+	rm -rf /var/lib/apt/lists/*
+{{ ) end -}}
+{{ ) -}}
 
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
 ENV GOSU_VERSION 1.17
 RUN set -eux; \
 	\
+{{ if is_alpine then ( -}}
 	apk add --no-cache --virtual .gosu-deps \
-		ca-certificates \
 		dpkg \
 		gnupg \
 	; \
+{{ ) else ( -}}
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		gnupg \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+{{ ) end -}}
 	\
 	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
 	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
@@ -47,13 +93,19 @@ RUN set -eux; \
 	gpgconf --kill all; \
 	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
 	\
+{{ if is_alpine then ( -}}
 	apk del --no-network .gosu-deps; \
+{{ ) else ( -}}
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+{{ ) end -}}
 	\
 # smoke test
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-{{ if env.version | IN("5.0", "5.1") then ( -}}
+{{ if is_alpine and (env.version | IN("5.0", "5.1")) then ( -}}
 RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 {{ ) else "" end -}}
 
@@ -82,12 +134,25 @@ RUN set -eux; \
 	# https://www.redmine.org/issues/42113 (aka https://github.com/rails/rails/issues/54260)
 	# 5.1: https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4
 	# 5.0: https://github.com/redmine/redmine/commit/f27570120b7a672249bfebfe4d62da506785e146
+{{ if is_alpine then ( -}}
 	apk add --no-cache patch; \
+{{ ) else ( -}}
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends patch; \
+{{ ) end -}}
 	wget -O 42113.patch 'https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4.patch?full_index=1'; \
 	echo 'e352699be3995ff6e3b0066a478e377922fa95ce9fe4729240cd98dcee3c8575 *42113.patch' | sha256sum -c -; \
 	patch -p1 < 42113.patch; \
 	rm 42113.patch; \
+{{ if is_alpine then ( -}}
 	apk del --no-network patch; \
+{{ ) else ( -}}
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*; \
+{{ ) end -}}
 {{ ) else "" end -}}
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
@@ -96,24 +161,60 @@ RUN set -eux; \
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
+{{ if is_alpine then ( -}}
 # build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
 ENV BUNDLE_FORCE_RUBY_PLATFORM 1
+{{ ) else "" end -}}
+{{
+	[
+		# common packages
+		"freetds-dev",
+		"gcc",
+		"make",
+		"patch",
+		if is_alpine then
+			# alpine packages
+			"coreutils", # required because "chmod +X" in busybox will remove +x on files (and coreutils leaves files alone with +X)
+			"mariadb-dev",
+			"musl-dev",
+			"postgresql-dev",
+			"sqlite-dev",
+			"ttf2ufm",
+			"yaml-dev",
+			"zlib-dev",
+			empty
+		else
+			# debian packages
+			"default-libmysqlclient-dev",
+			"libpq-dev",
+			"libsqlite3-dev",
+			"libxml2-dev",
+			"libxslt-dev",
+			"libyaml-dev",
+			"pkgconf",
+			"xz-utils",
+			empty
+		end
+	] | sort | (
+-}}
 RUN set -eux; \
-	\
+{{ if is_alpine then ( -}}
 	apk add --no-cache --virtual .build-deps \
-		coreutils \
-		freetds-dev \
-		gcc \
-		make \
-		mariadb-dev \
-		musl-dev \
-		patch \
-		postgresql-dev \
-		sqlite-dev \
-		ttf2ufm \
-		yaml-dev \
-		zlib-dev \
+{{ map( -}}
+		{{ . }} \
+{{ ) | add -}}
 	; \
+{{ ) else ( -}}
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+{{ map( -}}
+		{{ . }} \
+{{ ) | add -}}
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+{{ ) end -}}
+{{ ) -}}
 	\
 	gosu redmine bundle config --local without 'development test'; \
 # https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
@@ -127,18 +228,22 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
-{{ if env.version == "5.0" and (env.variant | startswith("alpine")) and env.variant != "alpine3.20" then ( -}}
+{{ if env.version == "5.0" and is_alpine and env.variant != "alpine3.20" then ( -}}
 	# Fix incompatibility with sqlite 1.4 in alpine 3.21
 	grep -q 'sqlite3", "~> 1.4.0"' Gemfile; \
 	sed -i -e 's/"sqlite3", "~> 1.4.0"/"sqlite3", "~> 1.5.0"/g' Gemfile; \
 {{ ) else "" end -}}
+{{ if is_alpine then "" else ( -}}
+# nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
+	gosu redmine bundle config build.nokogiri --use-system-libraries; \
+{{ ) end -}}
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
-# this requires coreutils because "chmod +X" in busybox will remove +x on files (and coreutils leaves files alone with +X)
 	rm -rf ~redmine/.bundle; \
 	\
+{{ if is_alpine then ( -}}
 # https://github.com/naitoh/rbpdf/issues/31
 	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
 	\
@@ -150,6 +255,20 @@ RUN set -eux; \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
 	apk del --no-network .build-deps
+{{ ) else ( -}}
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
+		| sort -u \
+		| xargs -r dpkg-query --search \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
+{{ ) end -}}
 
 VOLUME /usr/src/redmine/files
 
