@@ -68,24 +68,15 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 5.1.5
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.1.5.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 2c9739511712fc1381d9584fa005f911a3022e8366d1d6a53fec0f014dac0168
+ENV REDMINE_VERSION 5.1.6
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.1.6.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 d73584e74d692aa94644799d986df4e846fb59a43205c16bd857ed56cf0abed9
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
 	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
-	# https://www.redmine.org/issues/42113 (aka https://github.com/rails/rails/issues/54260)
-	# 5.1: https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4
-	# 5.0: https://github.com/redmine/redmine/commit/f27570120b7a672249bfebfe4d62da506785e146
-	apk add --no-cache patch; \
-	wget -O 42113.patch 'https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4.patch?full_index=1'; \
-	echo 'e352699be3995ff6e3b0066a478e377922fa95ce9fe4729240cd98dcee3c8575 *42113.patch' | sha256sum -c -; \
-	patch -p1 < 42113.patch; \
-	rm 42113.patch; \
-	apk del --no-network patch; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
 	chown -R redmine:redmine ./; \
