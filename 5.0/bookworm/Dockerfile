@@ -71,29 +71,15 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 5.0.10
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.10.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 cb0df0f6feb5a3198e59e36b239e9a1110011ed7078316bd1c8058247f5b9506
+ENV REDMINE_VERSION 5.0.11
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.0.11.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 5ed58a0ba26932158ed4e90eedbbcb8952018f15df9c51473097a68f09870838
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
 	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
 	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
 	tar -xf redmine.tar.gz --strip-components=1; \
-	# https://www.redmine.org/issues/42113 (aka https://github.com/rails/rails/issues/54260)
-	# 5.1: https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4
-	# 5.0: https://github.com/redmine/redmine/commit/f27570120b7a672249bfebfe4d62da506785e146
-	savedAptMark="$(apt-mark showmanual)"; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends patch; \
-	wget -O 42113.patch 'https://github.com/redmine/redmine/commit/c7b1f00fc1b42fd9f77b8e6574dae453ced642b4.patch?full_index=1'; \
-	echo 'e352699be3995ff6e3b0066a478e377922fa95ce9fe4729240cd98dcee3c8575 *42113.patch' | sha256sum -c -; \
-	patch -p1 < 42113.patch; \
-	rm 42113.patch; \
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark > /dev/null; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	mkdir -p log public/plugin_assets sqlite tmp/pdf tmp/pids; \
 	chown -R redmine:redmine ./; \
