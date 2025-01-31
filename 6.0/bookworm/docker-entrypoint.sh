@@ -31,14 +31,14 @@ esac
 
 _fix_permissions() {
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-	local dirs=( config log public/plugin_assets tmp ) args=()
+	local dirs=( config log public/assets public/plugin_assets tmp ) args=()
 	if [ "$(id -u)" = '0' ]; then
 		args+=( ${args[@]:+,} '(' '!' -user redmine -exec chown redmine:redmine '{}' + ')' )
 
 		# https://github.com/docker-library/redmine/issues/268 - scanning "files" might be *really* expensive, so we should skip it if it seems like it's "already correct"
 		local filesOwnerMode
 		filesOwnerMode="$(stat -c '%U:%a' files)"
-		if [ "$files" != 'redmine:755' ]; then
+		if [ "$filesOwnerMode" != 'redmine:755' ]; then
 			dirs+=( files )
 		fi
 	fi
