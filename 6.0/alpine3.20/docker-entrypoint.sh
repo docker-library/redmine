@@ -136,6 +136,42 @@ if [ -n "$isLikelyRedmine" ]; then
 		done
 	fi
 
+	# Create and fill smtp config/configuration.yml
+	if [ ! -f './config/configuration.yml' ]; then
+		# NOW ONLY SMTP SETTINGS AVAILABLE!!!
+		if [ "$REDMINE_EMAIL_DELIVERY_METHOD" == "smtp" ]; then
+			echo "$RAILS_ENV:" > config/configuration.yml
+			echo "  email_delivery:" >> config/configuration.yml
+			echo "    delivery_method: :$REDMINE_EMAIL_DELIVERY_METHOD" >> config/configuration.yml
+			echo "    smtp_settings:" >> config/configuration.yml
+			for var in \
+				address \
+				port \
+				ssl \
+				enable_starttls_auto \
+				openssl_verify_mode \
+				authentication \
+				user_name \
+				password \
+			; do
+				env="REDMINE_EMAIL_DELIVERY_SMTP_${var^^}"
+				val="${!env}"
+				[ -n "$val" ] || continue
+
+				if [ "$var" == 'authentication' ]; then
+					# add `:` prefix for field `authentication`
+					val=":$val"
+				fi
+
+				echo "      $var: $val" >> config/configuration.yml
+			done
+		else
+			echo >&2
+			echo >&2 'warning: missing REDMINE_EMAIL_DELIVERY_METHOD environment variable. File ./config/configuration.yml not created.'
+			echo >&2
+		fi
+	fi
+
 	# install additional gems for Gemfile.local and plugins
 	bundle check || bundle install
 
