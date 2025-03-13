@@ -83,6 +83,7 @@ if [ -n "$isLikelyRedmine" ]; then
 			file_env 'REDMINE_DB_PASSWORD' "${POSTGRES_ENV_POSTGRES_PASSWORD}"
 			file_env 'REDMINE_DB_DATABASE' "${POSTGRES_ENV_POSTGRES_DB:-${REDMINE_DB_USERNAME:-}}"
 			file_env 'REDMINE_DB_ENCODING' 'utf8'
+			file_env 'REDMINE_DB_SCHEMA_SEARCH_PATH' 'public'
 		elif [ "$REDMINE_DB_SQLSERVER" ]; then
 			adapter='sqlserver'
 			host="$REDMINE_DB_SQLSERVER"
@@ -123,6 +124,7 @@ if [ -n "$isLikelyRedmine" ]; then
 			password \
 			database \
 			encoding \
+			schema_search_path \
 		; do
 			env="REDMINE_DB_${var^^}"
 			val="${!env}"
