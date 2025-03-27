@@ -105,7 +105,7 @@ RUN set -eux; \
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-{{ if is_alpine and (env.version | IN("5.0", "5.1")) then ( -}}
+{{ if is_alpine and (env.version | IN("5.1")) then ( -}}
 RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 {{ ) else "" end -}}
 
@@ -205,11 +205,6 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
-{{ if env.version == "5.0" and is_alpine and env.variant != "alpine3.20" then ( -}}
-	# Fix incompatibility with sqlite 1.4 in alpine 3.21
-	grep -q 'sqlite3", "~> 1.4.0"' Gemfile; \
-	sed -i -e 's/"sqlite3", "~> 1.4.0"/"sqlite3", "~> 1.5.0"/g' Gemfile; \
-{{ ) else "" end -}}
 {{ if is_alpine then "" else ( -}}
 # nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
 	gosu redmine bundle config build.nokogiri --use-system-libraries; \
