@@ -27,6 +27,7 @@ file_env() {
 isLikelyRedmine=
 case "$1" in
 	rails | rake ) isLikelyRedmine=1 ;;
+	bundle ) if [ "${2:-}" = 'exec' ]; then isLikelyRedmine=1; fi ;; # https://github.com/docker-library/redmine/pull/386 - "bundle exec sidekiq"
 esac
 
 _fix_permissions() {
