@@ -17,16 +17,16 @@
   "6.0": {
     "alpine": "3.22",
     "debian": "bookworm",
-    "downloadUrl": "https://www.redmine.org/releases/redmine-6.0.6.tar.gz",
+    "downloadUrl": "https://www.redmine.org/releases/redmine-6.0.7.tar.gz",
     "ruby": {
       "version": "3.3"
     },
-    "sha256": "b7ac2d28893806b8f4fbd1480b714be546614e830e2029d47a0bf26a352bb3fa",
+    "sha256": "8824560a07673dc7b59f1ca0bf9d7cd854c6c4c97d0fe555a5dbeba332b8dfe8",
     "variants": [
       "bookworm",
       "alpine3.22",
       "alpine3.21"
     ],
-    "version": "6.0.6"
+    "version": "6.0.7"
   }
 }
