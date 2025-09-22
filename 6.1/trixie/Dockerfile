@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM ruby:3.3-slim-bookworm
+FROM ruby:3.4-slim-trixie
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -25,8 +25,6 @@ RUN set -eux; \
 		tini \
 		wget \
 	; \
-# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
-	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
 	rm -rf /var/lib/apt/lists/*
 
 # grab gosu for easy step-down from root
@@ -71,9 +69,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 6.0.7
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.0.7.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 8824560a07673dc7b59f1ca0bf9d7cd854c6c4c97d0fe555a5dbeba332b8dfe8
+ENV REDMINE_VERSION 6.1.0
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.1.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 bc483da195f2444491d870e40f7fc909ae750f7ba8d0e28831e6d6c478812b88
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \

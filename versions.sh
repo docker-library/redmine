@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 supportedDebianSuites=(
+	trixie
 	bookworm
 )
 supportedAlpineVersions=(
