@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM ruby:3.2-alpine3.22
+FROM ruby:3.4-alpine3.22
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -54,7 +54,6 @@ RUN set -eux; \
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
@@ -68,9 +67,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 5.1.10
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.1.10.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 0f187dcca0804f42faf7bbee1ad0a759291b026f707d86347bc14f34defa6f41
+ENV REDMINE_VERSION 6.1.0
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.1.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 bc483da195f2444491d870e40f7fc909ae750f7ba8d0e28831e6d6c478812b88
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
@@ -85,8 +84,6 @@ RUN set -eux; \
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
-# build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
-ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
 		coreutils \
@@ -97,10 +94,7 @@ RUN set -eux; \
 		musl-dev \
 		patch \
 		postgresql-dev \
-		sqlite-dev \
-		ttf2ufm \
 		yaml-dev \
-		zlib-dev \
 	; \
 	\
 	gosu redmine bundle config --local without 'development test'; \
@@ -129,6 +123,7 @@ RUN set -eux; \
 		| tr ',' '\n' \
 		| sort -u \
 		| awk ' \
+			$1 == "libc.so" { next } \
 			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
 			{ print "so:" $1 } \
 		' \
