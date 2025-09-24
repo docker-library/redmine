@@ -127,7 +127,10 @@ RUN set -eux; \
 		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
 		| tr ',' '\n' \
 		| sort -u \
-		| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+		| awk ' \
+			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
+			{ print "so:" $1 } \
+		' \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
 	apk del --no-network .build-deps

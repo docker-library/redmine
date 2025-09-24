@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 supportedDebianSuites=(
+	trixie
 	bookworm
 )
 supportedAlpineVersions=(
@@ -18,10 +19,11 @@ declare -A alpineVersions=(
 	#[5.0]='3.16'
 )
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
-defaultRubyVersion='3.3'
+defaultRubyVersion='3.4'
 declare -A rubyVersions=(
-	#[5.0]='3.1'
+	[6.0]='3.3'
 	[5.1]='3.2'
+	#[5.0]='3.1'
 )
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"

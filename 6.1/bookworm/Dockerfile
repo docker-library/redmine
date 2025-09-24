@@ -4,40 +4,42 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM ruby:3.2-alpine3.22
+FROM ruby:3.4-slim-bookworm
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
-# alpine already has a gid 999, so we'll use the next id
-RUN addgroup -S -g 1000 redmine && adduser -S -H -G redmine -u 999 redmine
+RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 
 RUN set -eux; \
-	apk add --no-cache \
-		bash \
-		breezy \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		bzr \
 		ca-certificates \
-		findutils \
 		ghostscript \
-		ghostscript-fonts \
 		git \
+		gsfonts \
 		imagemagick \
 		mercurial \
 		openssh-client \
 		subversion \
 		tini \
-		tzdata \
 		wget \
-	;
+	; \
+# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
+	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
+	rm -rf /var/lib/apt/lists/*
 
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
-ENV GOSU_VERSION 1.19
+ENV GOSU_VERSION 1.18
 RUN set -eux; \
 	\
-	apk add --no-cache --virtual .gosu-deps \
-		dpkg \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
 		gnupg \
 	; \
+	rm -rf /var/lib/apt/lists/*; \
 	\
 	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
 	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
@@ -48,13 +50,14 @@ RUN set -eux; \
 	gpgconf --kill all; \
 	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
 	\
-	apk del --no-network .gosu-deps; \
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	\
 # smoke test
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
 
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
@@ -68,9 +71,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 5.1.10
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-5.1.10.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 0f187dcca0804f42faf7bbee1ad0a759291b026f707d86347bc14f34defa6f41
+ENV REDMINE_VERSION 6.1.0
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.1.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 bc483da195f2444491d870e40f7fc909ae750f7ba8d0e28831e6d6c478812b88
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
@@ -85,23 +88,24 @@ RUN set -eux; \
 	chmod -R ugo=rwX config db sqlite; \
 	find log tmp -type d -exec chmod 1777 '{}' +
 
-# build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
-ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 RUN set -eux; \
-	apk add --no-cache --virtual .build-deps \
-		coreutils \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		default-libmysqlclient-dev \
 		freetds-dev \
 		gcc \
+		libpq-dev \
+		libsqlite3-dev \
+		libxml2-dev \
+		libxslt-dev \
+		libyaml-dev \
 		make \
-		mariadb-dev \
-		musl-dev \
 		patch \
-		postgresql-dev \
-		sqlite-dev \
-		ttf2ufm \
-		yaml-dev \
-		zlib-dev \
+		pkgconf \
+		xz-utils \
 	; \
+	rm -rf /var/lib/apt/lists/*; \
 	\
 	gosu redmine bundle config --local without 'development test'; \
 # https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
@@ -115,26 +119,27 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
+# nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
+	gosu redmine bundle config build.nokogiri --use-system-libraries; \
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
 	rm -rf ~redmine/.bundle; \
 	\
-# https://github.com/naitoh/rbpdf/issues/31
-	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
-	\
-	runDeps="$( \
-		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
-		| tr ',' '\n' \
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
-		| awk ' \
-			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
-			{ print "so:" $1 } \
-		' \
-	)"; \
-	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps
+		| xargs -rt dpkg-query --search \
+# https://manpages.debian.org/trixie/dpkg/dpkg-query.1.en.html#S (we ignore diversions and it'll be really unusual for more than one package to provide any given .so file)
+		| awk 'sub(":$", "", $1) { print $1 }' \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
 VOLUME /usr/src/redmine/files
 
