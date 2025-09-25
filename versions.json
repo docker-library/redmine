@@ -41,7 +41,6 @@
     "sha256": "bc483da195f2444491d870e40f7fc909ae750f7ba8d0e28831e6d6c478812b88",
     "variants": [
       "trixie",
-      "bookworm",
       "alpine3.22",
       "alpine3.21"
     ],

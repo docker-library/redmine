@@ -88,6 +88,10 @@ for version in "${versions[@]}"; do
 	get_version "$version"
 
 	for suite in "${supportedDebianSuites[@]}"; do
+		if [ "$suite" = 'bookworm' ] && [ "$version" != '5.1' ] && [ "$version" != '6.0' ]; then
+			# https://github.com/docker-library/redmine/pull/393 (6.1+ deps need newer rust on other arches and just isn't worth the trouble)
+			continue
+		fi
 		export suite
 		doc="$(jq <<<"$doc" -c '
 			.variants += [ env.suite ]
