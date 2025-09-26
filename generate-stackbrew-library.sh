@@ -100,6 +100,15 @@ for version; do
 		variantParent="$(awk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
 		variantArches="${parentRepoToArches[$variantParent]}"
 
+		if [ "$variant" = 'bookworm' ] && [ "$version" != '5.1' ] && [ "$version" != '6.0' ]; then
+			# https://github.com/docker-library/redmine/pull/393 (6.1+ deps need newer rust on other arches and just isn't worth the trouble)
+			variantArches="$(jq <<<"$variantArches" --raw-input --raw-output '
+				split(" ")
+				| map(select(IN("amd64", "arm64v8")))
+				| join(" ")
+			')"
+		fi
+
 		variantAliases=( "${versionAliases[@]/%/-$variant}" )
 		variantAliases=( "${variantAliases[@]//latest-/}" )
 
