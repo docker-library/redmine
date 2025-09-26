@@ -86,6 +86,8 @@ RUN set -eux; \
 
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
+		cargo \
+		clang19-dev \
 		coreutils \
 		freetds-dev \
 		gcc \

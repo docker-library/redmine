@@ -163,7 +163,12 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 				"ttf2ufm",
 				"zlib-dev",
 				empty
-			else empty end,
+			else
+				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
+				"cargo",
+				"clang19-dev", # TODO the dep needing libclang.so doesn't seem to care what version, so maybe there's a more generic dep we could use here?
+				empty
+			end,
 			empty
 		else
 			# debian packages
@@ -175,6 +180,12 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 			"libyaml-dev",
 			"pkgconf",
 			"xz-utils",
+			if IN(env.version; "5.1", "6.0") then empty else
+				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
+				"cargo",
+				"libclang-dev",
+				empty
+			end,
 			empty
 		end
 	] | sort | (

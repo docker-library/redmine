@@ -90,9 +90,11 @@ RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
+		cargo \
 		default-libmysqlclient-dev \
 		freetds-dev \
 		gcc \
+		libclang-dev \
 		libpq-dev \
 		libsqlite3-dev \
 		libxml2-dev \
