@@ -25,6 +25,7 @@ jobs:
         run: |
           strategy="$("$BASHBREW_SCRIPTS/github-actions/generate.sh")"
           strategy="$("$BASHBREW_SCRIPTS/github-actions/munge-i386.sh" -c <<<"$strategy")"
+          strategy="$(jq -c <<<"$strategy" '.matrix.include = [ .matrix.include[] | select(.name | split("-") | (.[0] | split(".")[0:2] | join(".") | tonumber >= 6.1) and ( .[1] // "" | test("bookworm.*i386")) | not) ]')" # https://github.com/docker-library/redmine/pull/393 (6.1+ deps need newer rust on other arches and just isn't worth the trouble)
           echo "strategy=$strategy" >> "$GITHUB_OUTPUT"
           jq . <<<"$strategy" # sanity check / debugging aid
 
