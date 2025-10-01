@@ -108,6 +108,14 @@ for version; do
 				| join(" ")
 			')"
 		fi
+		if [[ "$variant" = 'alpine'* ]] && [ "$version" != '5.1' ] && [ "$version" != '6.0' ]; then
+			# 6.1 alpine fails to build in a reasonable time on arm32v6
+			variantArches="$(jq <<<"$variantArches" --raw-input --raw-output '
+				split(" ")
+				| map(select(IN("arm32v6") | not))
+				| join(" ")
+			')"
+		fi
 
 		variantAliases=( "${versionAliases[@]/%/-$variant}" )
 		variantAliases=( "${variantAliases[@]//latest-/}" )
