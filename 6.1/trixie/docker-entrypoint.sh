@@ -156,7 +156,7 @@ if [ -n "$isLikelyRedmine" ]; then
 		# empty string is truthy in ruby and so masks the generated fallback config
 		# https://github.com/rails/rails/blob/1aa9987169213ce5ce43c20b2643bc64c235e792/railties/lib/rails/application.rb#L454
 		unset SECRET_KEY_BASE
-		# generate SECRET_KEY_BASE in-file if not set; this is not recommended unless the secret_token.rb is saved when container is recreated
+		# generate SECRET_KEY_BASE in-file since it is not set or empty; this is not recommended unless the secret_token.rb is saved when container is recreated
 		if [ ! -f config/initializers/secret_token.rb ]; then
 			echo >&2
 			echo >&2 'warning: no *SECRET_KEY_BASE set; running `rake generate_secret_token` to create one in "config/initializers/secret_token.rb"'
