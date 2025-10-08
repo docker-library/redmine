@@ -144,22 +144,22 @@ if [ -n "$isLikelyRedmine" ]; then
 	# just use the rails variable rather than trying to put it into a yml file
 	# https://github.com/rails/rails/blob/6-1-stable/railties/lib/rails/application.rb#L438
 	# https://github.com/rails/rails/blob/1aa9987169213ce5ce43c20b2643bc64c235e792/railties/lib/rails/application.rb#L484 (rails 7.1-stable)
-	if [ -n "${SECRET_KEY_BASE}" ] && [ -n "${REDMINE_SECRET_KEY_BASE}" ]; then
+	if [ -n "${SECRET_KEY_BASE:-}" ] && [ -n "${REDMINE_SECRET_KEY_BASE:-}" ]; then
 		echo >&2
 		echo >&2 'warning: both SECRET_KEY_BASE and REDMINE_SECRET_KEY_BASE{_FILE} set, only SECRET_KEY_BASE will apply'
 		echo >&2
 	fi
-	: "${SECRET_KEY_BASE:=$REDMINE_SECRET_KEY_BASE}"
-	if [ -n "$SECRET_KEY_BASE" ]; then
+	: "${SECRET_KEY_BASE:=${REDMINE_SECRET_KEY_BASE:-}}"
+	export SECRET_KEY_BASE
+	if [ -z "$SECRET_KEY_BASE" ]; then
 		# https://github.com/docker-library/redmine/issues/397
 		# empty string is truthy in ruby and so masks the generated fallback config
 		# https://github.com/rails/rails/blob/1aa9987169213ce5ce43c20b2643bc64c235e792/railties/lib/rails/application.rb#L454
-		export SECRET_KEY_BASE
+		unset SECRET_KEY_BASE
 	fi
-	# generate SECRET_KEY_BASE if not set; this is not recommended unless the secret_token.rb is saved when container is recreated
-	if [ -z "$SECRET_KEY_BASE" ] && [ ! -f config/initializers/secret_token.rb ]; then
+	# generate SECRET_KEY_BASE in-file if not set; this is not recommended unless the secret_token.rb is saved when container is recreated
+	if [ -z "${SECRET_KEY_BASE:-}" ] && [ ! -f config/initializers/secret_token.rb ]; then
 		echo >&2 'warning: no *SECRET_KEY_BASE set; running `rake generate_secret_token` to create one in "config/initializers/secret_token.rb"'
-		unset SECRET_KEY_BASE # just in case
 		rake generate_secret_token
 	fi
 
