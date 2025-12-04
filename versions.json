@@ -1,6 +1,6 @@
 {
   "5.1": {
-    "alpine": "3.22",
+    "alpine": "3.23",
     "debian": "trixie",
     "downloadUrl": "https://www.redmine.org/releases/redmine-5.1.10.tar.gz",
     "ruby": {
@@ -10,13 +10,13 @@
     "variants": [
       "trixie",
       "bookworm",
-      "alpine3.22",
-      "alpine3.21"
+      "alpine3.23",
+      "alpine3.22"
     ],
     "version": "5.1.10"
   },
   "6.0": {
-    "alpine": "3.22",
+    "alpine": "3.23",
     "debian": "trixie",
     "downloadUrl": "https://www.redmine.org/releases/redmine-6.0.7.tar.gz",
     "ruby": {
@@ -26,13 +26,13 @@
     "variants": [
       "trixie",
       "bookworm",
-      "alpine3.22",
-      "alpine3.21"
+      "alpine3.23",
+      "alpine3.22"
     ],
     "version": "6.0.7"
   },
   "6.1": {
-    "alpine": "3.22",
+    "alpine": "3.23",
     "debian": "trixie",
     "downloadUrl": "https://www.redmine.org/releases/redmine-6.1.0.tar.gz",
     "ruby": {
@@ -42,8 +42,8 @@
     "variants": [
       "trixie",
       "bookworm",
-      "alpine3.22",
-      "alpine3.21"
+      "alpine3.23",
+      "alpine3.22"
     ],
     "version": "6.1.0"
   }
