@@ -78,11 +78,12 @@ RUN set -eux; \
 	tar -xf redmine.tar.gz --strip-components=1; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-	mkdir -p log public/assets public/plugin_assets sqlite tmp/pdf tmp/pids; \
+	set -- 'config' 'db' 'log' 'public/assets' 'sqlite' 'tmp' 'tmp/pdf' 'tmp/pids'; \
+	mkdir -p "$@"; \
 	chown -R redmine:redmine ./; \
 # fix permissions for running as an arbitrary user
-	chmod -R ugo=rwX config db sqlite; \
-	find log tmp -type d -exec chmod 1777 '{}' +
+	chmod -R ugo=rwX "$@"; \
+	find "$@" -type d -exec chmod 1777 '{}' +
 
 # build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
 ENV BUNDLE_FORCE_RUBY_PLATFORM 1

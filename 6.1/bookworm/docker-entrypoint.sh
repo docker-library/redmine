@@ -32,7 +32,7 @@ esac
 
 _fix_permissions() {
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-	local dirs=( config log public/assets public/plugin_assets tmp ) args=()
+	local dirs=( config log public/*assets tmp ) args=()
 	if [ "$(id -u)" = '0' ]; then
 		args+=( ${args[@]:+,} '(' '!' -user redmine -exec chown redmine:redmine '{}' + ')' )
 
