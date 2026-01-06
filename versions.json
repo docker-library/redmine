@@ -2,18 +2,18 @@
   "5.1": {
     "alpine": "3.23",
     "debian": "trixie",
-    "downloadUrl": "https://www.redmine.org/releases/redmine-5.1.10.tar.gz",
+    "downloadUrl": "https://www.redmine.org/releases/redmine-5.1.11.tar.gz",
     "ruby": {
       "version": "3.2"
     },
-    "sha256": "0f187dcca0804f42faf7bbee1ad0a759291b026f707d86347bc14f34defa6f41",
+    "sha256": "5320bf7a35d3e9feb90c52d8bd018aa263dc77eb17c96001d8b3223c59549049",
     "variants": [
       "trixie",
       "bookworm",
       "alpine3.23",
       "alpine3.22"
     ],
-    "version": "5.1.10"
+    "version": "5.1.11"
   },
   "6.0": {
     "alpine": "3.23",
