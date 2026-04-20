@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 declare -A aliases=(
-	[5.1]='5'
 	[6.1]='6 latest'
 )
 
@@ -100,7 +99,7 @@ for version; do
 		variantParent="$(awk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
 		variantArches="${parentRepoToArches[$variantParent]}"
 
-		if [ "$variant" = 'bookworm' ] && [ "$version" != '5.1' ] && [ "$version" != '6.0' ]; then
+		if [ "$variant" = 'bookworm' ] && [ "$version" != '6.0' ]; then
 			# https://github.com/docker-library/redmine/pull/393 (6.1+ deps need newer rust on other arches and just isn't worth the trouble)
 			variantArches="$(jq <<<"$variantArches" --raw-input --raw-output '
 				split(" ")
@@ -108,7 +107,7 @@ for version; do
 				| join(" ")
 			')"
 		fi
-		if [[ "$variant" = 'alpine'* ]] && [ "$version" != '5.1' ] && [ "$version" != '6.0' ]; then
+		if [[ "$variant" = 'alpine'* ]] && [ "$version" != '6.0' ]; then
 			# 6.1 alpine fails to build in a reasonable time on arm32v6
 			variantArches="$(jq <<<"$variantArches" --raw-input --raw-output '
 				split(" ")

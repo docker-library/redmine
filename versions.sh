@@ -22,7 +22,7 @@ declare -A alpineVersions=(
 defaultRubyVersion='3.4'
 declare -A rubyVersions=(
 	[6.0]='3.3'
-	[5.1]='3.2'
+	#[5.1]='3.2'
 	#[5.0]='3.1'
 )
 

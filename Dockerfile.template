@@ -107,9 +107,6 @@ RUN set -eux; \
 	chmod +x /usr/local/bin/gosu; \
 	gosu --version; \
 	gosu nobody true
-{{ if is_alpine and (env.version | IN("5.1")) then ( -}}
-RUN set -eux; ln -svf gosu /usr/local/bin/su-exec; su-exec nobody true # backwards compatibility (removed in Redmine 5.2+)
-{{ ) else "" end -}}
 
 ENV RAILS_ENV production
 WORKDIR /usr/src/redmine
@@ -145,11 +142,7 @@ RUN set -eux; \
 			"log",
 			"tmp",
 			"tmp/pdf",
-			if (env.version | IN("5.1")) then
-				"public/plugin_assets"
-			else
-				"public/assets"
-			end,
+			"public/assets",
 			empty
 			| @sh
 		]
@@ -162,7 +155,7 @@ RUN set -eux; \
 	chmod -R ugo=rwX "$@"; \
 	find "$@" -type d -exec chmod 1777 '{}' +
 
-{{ if is_alpine and IN(env.version; "5.1", "6.0") then ( -}}
+{{ if is_alpine and IN(env.version; "6.0") then ( -}}
 # build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
 ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 {{ ) else "" end -}}
@@ -180,7 +173,7 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 			"musl-dev",
 			"postgresql-dev",
 			"yaml-dev",
-			if IN(env.version; "5.1", "6.0") then
+			if IN(env.version; "6.0") then
 				"sqlite-dev",
 				"ttf2ufm",
 				"zlib-dev",
@@ -202,7 +195,7 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 			"libyaml-dev",
 			"pkgconf",
 			"xz-utils",
-			if IN(env.version; "5.1", "6.0") then empty else
+			if IN(env.version; "6.0") then empty else
 				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
 				"cargo",
 				"libclang-dev",
@@ -262,7 +255,7 @@ RUN set -eux; \
 		| tr ',' '\n' \
 		| sort -u \
 		| awk ' \
-{{ if IN(env.version; "5.1", "6.0") then "" else ( -}}
+{{ if IN(env.version; "6.0") then "" else ( -}}
 			$1 == "libc.so" { next } \
 {{ ) end -}}
 			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
