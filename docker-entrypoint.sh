@@ -92,6 +92,7 @@ if [ -n "$isLikelyRedmine" ]; then
 			file_env 'REDMINE_DB_PASSWORD' ''
 			file_env 'REDMINE_DB_DATABASE' ''
 			file_env 'REDMINE_DB_ENCODING' ''
+			file_env 'REDMINE_DB_AZURE' 'true'
 		else
 			echo >&2
 			echo >&2 'warning: missing REDMINE_DB_MYSQL, REDMINE_DB_POSTGRES, or REDMINE_DB_SQLSERVER environment variables'
@@ -124,6 +125,7 @@ if [ -n "$isLikelyRedmine" ]; then
 			password \
 			database \
 			encoding \
+			azure \
 		; do
 			env="REDMINE_DB_${var^^}"
 			val="${!env}"
