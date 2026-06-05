@@ -41,6 +41,11 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 			# debian packages
 			"bzr",
 			"gsfonts", # for generating PNGs of Gantt charts
+			# redmine needs a rails update that includes https://github.com/rails/rails/pull/57266
+			# before it will handle the renamed timezones (they just fail to show in the redmine selector)
+			if env.variant == "trixie" and IN(env.version; "6.0", "6.1") then
+				"tzdata-legacy"
+			else empty end,
 			empty
 		end
 	] | sort | (
@@ -263,7 +268,7 @@ RUN set -eux; \
 		' \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps
+	apk del --no-network .build-deps; \
 {{ ) else ( -}}
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
@@ -277,8 +282,10 @@ RUN set -eux; \
 		| sort -u \
 		| xargs -r apt-mark manual \
 	; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 {{ ) end -}}
+	# verify Kyiv timezone isn't missing
+	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
 
 VOLUME /usr/src/redmine/files
 
