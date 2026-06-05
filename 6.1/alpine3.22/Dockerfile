@@ -132,7 +132,9 @@ RUN set -eux; \
 		' \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps
+	apk del --no-network .build-deps; \
+	# verify Kyiv timezone isn't missing
+	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
 
 VOLUME /usr/src/redmine/files
 

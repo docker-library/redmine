@@ -23,6 +23,7 @@ RUN set -eux; \
 		openssh-client \
 		subversion \
 		tini \
+		tzdata-legacy \
 		wget \
 	; \
 	rm -rf /var/lib/apt/lists/*
@@ -140,7 +141,9 @@ RUN set -eux; \
 		| sort -u \
 		| xargs -r apt-mark manual \
 	; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	# verify Kyiv timezone isn't missing
+	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
 
 VOLUME /usr/src/redmine/files
 
