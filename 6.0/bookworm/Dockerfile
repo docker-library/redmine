@@ -71,9 +71,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 6.0.9
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.0.9.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 9bc760b5147cc27e27334cecbaf600be6efc009cd8fe57680309af513d852006
+ENV REDMINE_VERSION 6.0.10
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.0.10.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 0f3f3a7159188fbd65a365519037ebe6882c6dace78d8630de22c570ff20ca77
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \

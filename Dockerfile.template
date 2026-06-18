@@ -186,7 +186,7 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 			else
 				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
 				"cargo",
-				"clang19-dev", # TODO the dep needing libclang.so doesn't seem to care what version, so maybe there's a more generic dep we could use here?
+				"clang21-dev", # TODO the dep needing libclang.so doesn't seem to care what version, so maybe there's a more generic dep we could use here?
 				empty
 			end,
 			empty
