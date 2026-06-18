@@ -121,8 +121,14 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
+# ruby gems (like nokogiri) don't publish arm32v5-compatible, pre-compiled libraries
+# force them to compile so that they don't pull arm32v[6-7] libraries
+	arch="$(dpkg --print-architecture)"; \
+	if [ "$arch" = 'armel' ]; then \
+		gosu redmine bundle config set force_ruby_platform true; \
+	fi; \
 # nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
-	gosu redmine bundle config build.nokogiri --use-system-libraries; \
+	gosu redmine bundle config set build.nokogiri --use-system-libraries; \
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
