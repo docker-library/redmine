@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM ruby:3.4-slim-bookworm
+FROM ruby:4.0-slim-trixie
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -23,10 +23,9 @@ RUN set -eux; \
 		openssh-client \
 		subversion \
 		tini \
+		tzdata-legacy \
 		wget \
 	; \
-# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
-	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
 	rm -rf /var/lib/apt/lists/*
 
 # grab gosu for easy step-down from root
@@ -71,9 +70,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 6.1.3
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.1.3.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 61db3008c7fd18a3afc559ed656fd38fdf8df8220ac69598b319095183190b7a
+ENV REDMINE_VERSION 7.0.0
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-7.0.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 857e9f8860c31e4c531389e5d93eea26488dba69830484a3b0aa904be615e90a
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
@@ -96,6 +95,7 @@ RUN set -eux; \
 		default-libmysqlclient-dev \
 		freetds-dev \
 		gcc \
+		libclang-dev \
 		libpq-dev \
 		libsqlite3-dev \
 		libxml2-dev \
@@ -106,6 +106,13 @@ RUN set -eux; \
 		pkgconf \
 		xz-utils \
 	; \
+# error: rustc 1.85.0 is not supported by the following packages: ... requires rustc 1.88.0
+# install cargo/rust from backports so that it is new enough
+# https://packages.debian.org/trixie-backports/cargo
+	echo 'deb http://deb.debian.org/debian trixie-backports main' > /etc/apt/sources.list.d/backports.list; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends cargo/trixie-backports rustc/trixie-backports; \
+	rm -f /etc/apt/sources.list.d/backports.list; \
 	rm -rf /var/lib/apt/lists/*; \
 	\
 	gosu redmine bundle config --local without 'development test'; \

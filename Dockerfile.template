@@ -43,7 +43,7 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 			"gsfonts", # for generating PNGs of Gantt charts
 			# redmine needs a rails update that includes https://github.com/rails/rails/pull/57266
 			# before it will handle the renamed timezones (they just fail to show in the redmine selector)
-			if env.variant == "trixie" and IN(env.version; "6.0", "6.1") then
+			if env.variant == "trixie" and IN(env.version; "6.0", "6.1", "7.0") then
 				"tzdata-legacy"
 			else empty end,
 			empty
@@ -200,9 +200,10 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 			"libyaml-dev",
 			"pkgconf",
 			"xz-utils",
-			if IN(env.version; "6.0") then empty else
+			if IN(env.version; "6.0") or env.variant == "bookworm" then empty else
 				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
-				"cargo",
+				# bookworm is amd64 & arm64 only
+				if IN(env.version; "6.1") then "cargo" else empty end, # 7.0+ needs cargo from backports
 				"libclang-dev",
 				empty
 			end,
@@ -225,6 +226,15 @@ RUN set -eux; \
 		{{ . }} \
 {{ ) | add -}}
 	; \
+{{ if IN(env.version; "7.0") and env.variant == "trixie" then ( -}}
+# error: rustc 1.85.0 is not supported by the following packages: ... requires rustc 1.88.0
+# install cargo/rust from backports so that it is new enough
+# https://packages.debian.org/trixie-backports/cargo
+	echo 'deb http://deb.debian.org/debian trixie-backports main' > /etc/apt/sources.list.d/backports.list; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends cargo/trixie-backports rustc/trixie-backports; \
+	rm -f /etc/apt/sources.list.d/backports.list; \
+{{ ) else "" end -}}
 	rm -rf /var/lib/apt/lists/*; \
 {{ ) end -}}
 {{ ) -}}
