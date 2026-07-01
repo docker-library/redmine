@@ -1,95 +1,44 @@
-{{
-	def is_alpine:
-		env.variant | startswith("alpine")
--}}
-{{ if is_alpine then ( -}}
-FROM ruby:{{ .ruby.version }}-{{ env.variant }}
-{{ ) else ( -}}
-FROM ruby:{{ .ruby.version }}-slim-{{ env.variant }}
-{{ ) end -}}
+#
+# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
+#
+# PLEASE DO NOT EDIT IT DIRECTLY.
+#
+
+FROM ruby:3.4-slim-trixie
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
-{{ if is_alpine then ( -}}
-# alpine already has a gid 999, so we'll use the next id
-RUN addgroup -S -g 1000 redmine && adduser -S -H -G redmine -u 999 redmine
-{{ ) else ( -}}
 RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
-{{ ) end -}}
 
-{{
-	[
-		# common packages
-		"ca-certificates",
-		"ghostscript", # for creating PDF thumbnails
-		"git",
-		"imagemagick",
-		"mercurial",
-		"openssh-client",
-		"subversion",
-		"tini", # grab tini for signal processing and zombie killing
-		"wget",
-		if is_alpine then
-			# alpine packages
-			"bash",
-			"breezy",
-			"findutils",
-			"ghostscript-fonts",  # for generating PNGs of Gantt charts
-			"tzdata",
-			empty
-		else
-			# debian packages
-			"bzr",
-			"gsfonts", # for generating PNGs of Gantt charts
-			# redmine needs a rails update that includes https://github.com/rails/rails/pull/57266
-			# before it will handle the renamed timezones (they just fail to show in the redmine selector)
-			if env.variant == "trixie" and IN(env.version; "6.0", "6.1", "7.0") then
-				"tzdata-legacy"
-			else empty end,
-			empty
-		end
-	] | sort | (
--}}
 RUN set -eux; \
-{{ if is_alpine then ( -}}
-	apk add --no-cache \
-{{ map( -}}
-		{{ . }} \
-{{ ) | add -}}
-	;
-{{ ) else ( -}}
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-{{ map( -}}
-		{{ . }} \
-{{ ) | add -}}
+		bzr \
+		ca-certificates \
+		ghostscript \
+		git \
+		gsfonts \
+		imagemagick \
+		mercurial \
+		openssh-client \
+		subversion \
+		tini \
+		tzdata-legacy \
+		wget \
 	; \
-{{ if env.variant == "bookworm" then ( -}}
-# allow imagemagick to use ghostscript for PDF -> PNG thumbnail conversion (4.1+)
-	sed -ri 's/(rights)="none" (pattern="PDF")/\1="read" \2/' /etc/ImageMagick-6/policy.xml; \
-{{ ) else "" end -}}
 	rm -rf /var/lib/apt/lists/*
-{{ ) end -}}
-{{ ) -}}
 
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
 ENV GOSU_VERSION=1.19
 RUN set -eux; \
 	\
-{{ if is_alpine then ( -}}
-	apk add --no-cache --virtual .gosu-deps \
-		dpkg \
-		gnupg \
-	; \
-{{ ) else ( -}}
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		gnupg \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
-{{ ) end -}}
 	\
 	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
 	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
@@ -100,13 +49,9 @@ RUN set -eux; \
 	gpgconf --kill all; \
 	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
 	\
-{{ if is_alpine then ( -}}
-	apk del --no-network .gosu-deps; \
-{{ ) else ( -}}
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark > /dev/null; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-{{ ) end -}}
 	\
 # smoke test
 	chmod +x /usr/local/bin/gosu; \
@@ -125,9 +70,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION={{ .version }}
-ENV REDMINE_DOWNLOAD_URL={{ .downloadUrl }}
-ENV REDMINE_DOWNLOAD_SHA256={{ .sha256 }}
+ENV REDMINE_VERSION=7.0.0
+ENV REDMINE_DOWNLOAD_URL=https://www.redmine.org/releases/redmine-7.0.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256=857e9f8860c31e4c531389e5d93eea26488dba69830484a3b0aa904be615e90a
 ENV RAILS_LOG_TO_STDOUT=true
 
 RUN set -eux; \
@@ -136,98 +81,33 @@ RUN set -eux; \
 	tar -xf redmine.tar.gz --strip-components=1; \
 	rm redmine.tar.gz files/delete.me log/delete.me; \
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
-	set -- {{
-		[
-			"config",   # database.yml created by the entrypoint and secret_token.rb if not using SECRET_KEY_BASE
-			"db",       # schema.rb is created/edited during 'rake db:migrate'
-			"sqlite",   # database dir when using sqlite
-			"tmp/pids", # pid file location
-
-			# from RedmineInstall instructions
-			"log",
-			"tmp",
-			"tmp/pdf",
-			"public/assets",
-			empty
-			| @sh
-		]
-		| sort
-		| join(" ")
-	}}; \
+	set -- 'config' 'db' 'log' 'public/assets' 'sqlite' 'tmp' 'tmp/pdf' 'tmp/pids'; \
 	mkdir -p "$@"; \
 	chown -R redmine:redmine ./; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX "$@"; \
 	find "$@" -type d -exec chmod 1777 '{}' +
 
-{{ if is_alpine and IN(env.version; "6.0") then ( -}}
-# build for musl-libc, not glibc (see https://github.com/sparklemotion/nokogiri/issues/2075, https://github.com/rubygems/rubygems/issues/3174)
-ENV BUNDLE_FORCE_RUBY_PLATFORM=1
-{{ ) else "" end -}}
-{{
-	[
-		# common packages
-		"freetds-dev",
-		"gcc",
-		"make",
-		"patch",
-		if is_alpine then
-			# alpine packages
-			"coreutils", # required because "chmod +X" in busybox will remove +x on files (and coreutils leaves files alone with +X)
-			"mariadb-dev",
-			"musl-dev",
-			"postgresql-dev",
-			"yaml-dev",
-			if IN(env.version; "6.0") then
-				"sqlite-dev",
-				"ttf2ufm",
-				"zlib-dev",
-				empty
-			else
-				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
-				"cargo",
-				"clang21-dev", # TODO the dep needing libclang.so doesn't seem to care what version, so maybe there's a more generic dep we could use here?
-				empty
-			end,
-			empty
-		else
-			# debian packages
-			"default-libmysqlclient-dev",
-			"libpq-dev",
-			"libsqlite3-dev",
-			"libxml2-dev",
-			"libxslt-dev",
-			"libyaml-dev",
-			"pkgconf",
-			"xz-utils",
-			if IN(env.version; "6.0") then empty else
-				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
-				"cargo",
-				"libclang-dev",
-				empty
-			end,
-			empty
-		end
-	] | sort | (
--}}
 RUN set -eux; \
-{{ if is_alpine then ( -}}
-	apk add --no-cache --virtual .build-deps \
-{{ map( -}}
-		{{ . }} \
-{{ ) | add -}}
-	; \
-{{ ) else ( -}}
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-{{ map( -}}
-		{{ . }} \
-{{ ) | add -}}
+		cargo \
+		default-libmysqlclient-dev \
+		freetds-dev \
+		gcc \
+		libclang-dev \
+		libpq-dev \
+		libsqlite3-dev \
+		libxml2-dev \
+		libxslt-dev \
+		libyaml-dev \
+		make \
+		patch \
+		pkgconf \
+		xz-utils \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
-{{ ) end -}}
-{{ ) -}}
 	\
 	gosu redmine bundle config --local without 'development test'; \
 # https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
@@ -241,7 +121,6 @@ RUN set -eux; \
 		echo "$adapter:" >> ./config/database.yml; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
-{{ if is_alpine then "" else ( -}}
 # ruby gems (like nokogiri) don't publish arm32v5-compatible, pre-compiled libraries
 # force them to compile so that they don't pull arm32v[6-7] libraries
 	arch="$(dpkg --print-architecture)"; \
@@ -250,32 +129,12 @@ RUN set -eux; \
 	fi; \
 # nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
 	gosu redmine bundle config set build.nokogiri --use-system-libraries; \
-{{ ) end -}}
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
 	rm -rf ~redmine/.bundle; \
 	\
-{{ if is_alpine then ( -}}
-# https://github.com/naitoh/rbpdf/issues/31
-	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
-	\
-	runDeps="$( \
-		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
-		| tr ',' '\n' \
-		| sort -u \
-		| awk ' \
-{{ if IN(env.version; "6.0") then "" else ( -}}
-			$1 == "libc.so" { next } \
-{{ ) end -}}
-			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
-			{ print "so:" $1 } \
-		' \
-	)"; \
-	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps; \
-{{ ) else ( -}}
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
 	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
@@ -289,7 +148,6 @@ RUN set -eux; \
 		| xargs -r apt-mark manual \
 	; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-{{ ) end -}}
 	# verify Kyiv timezone isn't missing
 	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
 
