@@ -125,13 +125,42 @@ RUN set -eux; \
 	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
 	\
 	runDeps="$( \
-		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
-		| tr ',' '\n' \
+		scanelf --needed --nobanner --rpath --format '%n|%r|%F' --recursive /usr/local/bundle/gems \
+		| awk -F '|' '{ \
+			split($1, libs, ","); \
+			split($2, rpaths, ":"); \
+			\
+			# $3 is the full file path. Calculate $ORIGIN by stripping the filename.
+			origin = $3; \
+			sub("/[^/]+$", "", origin); \
+			\
+			for (i in libs) { \
+				lib = libs[i]; \
+				\
+				# 1. Skip if it exists in /usr/local/lib
+				if (!system("[ -e \"/usr/local/lib/" lib "\" ]")) continue; \
+				\
+				# 2. Check if satisfied by a bundled (relative) rpath
+				found = 0; \
+				for (j in rpaths) { \
+					rpath = rpaths[j]; \
+					\
+					# Only resolve $ORIGIN-relative rpaths.
+					if (sub(/^\$[{]?ORIGIN[}]?/, origin, rpath)) { \
+						if (!system("[ -e \"" rpath "/" lib "\" ]")) { \
+							found = 1; \
+							break; \
+						} \
+					} \
+				} \
+				\
+				# 3. If missing globally and not bundled locally, keep it as a system dep
+				if (!found) { \
+					print "so:" lib; \
+				} \
+			} \
+		}' \
 		| sort -u \
-		| awk ' \
-			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
-			{ print "so:" $1 } \
-		' \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
 	apk del --no-network .build-deps; \
