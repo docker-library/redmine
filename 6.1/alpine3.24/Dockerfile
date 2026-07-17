@@ -113,6 +113,10 @@ RUN set -eux; \
 		echo "  adapter: $adapter" >> ./config/database.yml; \
 	done; \
 	gosu redmine bundle install --jobs "$(nproc)"; \
+# verify Kyiv timezone isn't missing; must run BEFORE removing the stub
+# database.yml because Redmine 7.0+ (Rails 8.1) refuses to run rake tasks
+# without a database configuration
+	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
@@ -128,13 +132,12 @@ RUN set -eux; \
 		| awk ' \
 			$1 == "libc.so" { next } \
 			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
+			system("find /usr/local/bundle -name " $1 " -print -quit 2>/dev/null | grep -q .") == 0 { next } \
 			{ print "so:" $1 } \
 		' \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps; \
-	# verify Kyiv timezone isn't missing
-	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
+	apk del --no-network .build-deps
 
 VOLUME /usr/src/redmine/files
 

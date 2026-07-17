@@ -41,9 +41,11 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 			# debian packages
 			"bzr",
 			"gsfonts", # for generating PNGs of Gantt charts
-			# redmine needs a rails update that includes https://github.com/rails/rails/pull/57266
-			# before it will handle the renamed timezones (they just fail to show in the redmine selector)
-			if env.variant == "trixie" and IN(env.version; "6.0", "6.1") then
+			# trixie's tzdata drops legacy zone names (e.g. Europe/Kiev) which
+			# older Rails releases still expect; tzdata-legacy restores them so
+			# that `rake time:zones:all` continues to expose the renamed cities
+			# (Kyiv, etc.) in the Redmine timezone selector
+			if env.variant == "trixie" then
 				"tzdata-legacy"
 			else empty end,
 			empty
@@ -252,6 +254,10 @@ RUN set -eux; \
 	gosu redmine bundle config set build.nokogiri --use-system-libraries; \
 {{ ) end -}}
 	gosu redmine bundle install --jobs "$(nproc)"; \
+# verify Kyiv timezone isn't missing; must run BEFORE removing the stub
+# database.yml because Redmine 7.0+ (Rails 8.1) refuses to run rake tasks
+# without a database configuration
+	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'; \
 	rm ./config/database.yml; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
@@ -270,11 +276,12 @@ RUN set -eux; \
 			$1 == "libc.so" { next } \
 {{ ) end -}}
 			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
+			system("find /usr/local/bundle -name " $1 " -print -quit 2>/dev/null | grep -q .") == 0 { next } \
 			{ print "so:" $1 } \
 		' \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
-	apk del --no-network .build-deps; \
+	apk del --no-network .build-deps
 {{ ) else ( -}}
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
@@ -288,10 +295,8 @@ RUN set -eux; \
 		| sort -u \
 		| xargs -r apt-mark manual \
 	; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 {{ ) end -}}
-	# verify Kyiv timezone isn't missing
-	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
 
 VOLUME /usr/src/redmine/files
 

@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM ruby:3.3-slim-bookworm
+FROM ruby:4.0.6-slim-bookworm
 
 # explicitly set uid/gid to guarantee that it won't change in the future
 # the values 999:999 are identical to the current user/group id assigned
@@ -71,9 +71,9 @@ RUN set -eux; \
 	chown redmine:redmine "$HOME"; \
 	chmod 1777 "$HOME"
 
-ENV REDMINE_VERSION 6.0.10
-ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-6.0.10.tar.gz
-ENV REDMINE_DOWNLOAD_SHA256 0f3f3a7159188fbd65a365519037ebe6882c6dace78d8630de22c570ff20ca77
+ENV REDMINE_VERSION 7.0.0
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-7.0.0.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 857e9f8860c31e4c531389e5d93eea26488dba69830484a3b0aa904be615e90a
 ENV RAILS_LOG_TO_STDOUT true
 
 RUN set -eux; \
@@ -93,9 +93,11 @@ RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
+		cargo \
 		default-libmysqlclient-dev \
 		freetds-dev \
 		gcc \
+		libclang-dev \
 		libpq-dev \
 		libsqlite3-dev \
 		libxml2-dev \

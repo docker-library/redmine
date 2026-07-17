@@ -21,6 +21,10 @@ declare -A alpineVersions=(
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
 defaultRubyVersion='3.4'
 declare -A rubyVersions=(
+	# Redmine 7.0 requires Ruby 3.2+; Ruby 4.0.0-4.0.3 has a wiki rendering
+	# regression (https://www.redmine.org/issues/43737), fixed in 4.0.4+.
+	# Pinning to the exact patch until upstream policy for this repo is defined.
+	[7.0]='4.0.6'
 	[6.0]='3.3'
 	#[5.1]='3.2'
 	#[5.0]='3.1'
