@@ -43,7 +43,7 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 			"gsfonts", # for generating PNGs of Gantt charts
 			# redmine needs a rails update that includes https://github.com/rails/rails/pull/57266
 			# before it will handle the renamed timezones (they just fail to show in the redmine selector)
-			if env.variant == "trixie" and IN(env.version; "6.0", "6.1") then
+			if env.variant == "trixie" and IN(env.version; "6.0", "6.1", "7.0") then
 				"tzdata-legacy"
 			else empty end,
 			empty
@@ -200,9 +200,10 @@ ENV BUNDLE_FORCE_RUBY_PLATFORM 1
 			"libyaml-dev",
 			"pkgconf",
 			"xz-utils",
-			if IN(env.version; "6.0") then empty else
+			if IN(env.version; "6.0") or env.variant == "bookworm" then empty else
 				# 6.1+ needs to compile some extensions on non-amd64-non-arm64 architectures
-				"cargo",
+				# bookworm is amd64 & arm64 only
+				if IN(env.version; "6.1") then "cargo" else empty end, # 7.0+ needs cargo from backports
 				"libclang-dev",
 				empty
 			end,
@@ -225,6 +226,15 @@ RUN set -eux; \
 		{{ . }} \
 {{ ) | add -}}
 	; \
+{{ if IN(env.version; "7.0") and env.variant == "trixie" then ( -}}
+# error: rustc 1.85.0 is not supported by the following packages: ... requires rustc 1.88.0
+# install cargo/rust from backports so that it is new enough
+# https://packages.debian.org/trixie-backports/cargo
+	echo 'deb http://deb.debian.org/debian trixie-backports main' > /etc/apt/sources.list.d/backports.list; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends cargo/trixie-backports rustc/trixie-backports; \
+	rm -f /etc/apt/sources.list.d/backports.list; \
+{{ ) else "" end -}}
 	rm -rf /var/lib/apt/lists/*; \
 {{ ) end -}}
 {{ ) -}}
@@ -262,16 +272,45 @@ RUN set -eux; \
 	rm /usr/local/bundle/gems/rbpdf-font-1.19.*/lib/fonts/ttf2ufm/ttf2ufm; \
 	\
 	runDeps="$( \
-		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/bundle/gems \
-		| tr ',' '\n' \
-		| sort -u \
-		| awk ' \
+		scanelf --needed --nobanner --rpath --format '%n|%r|%F' --recursive /usr/local/bundle/gems \
+		| awk -F '|' '{ \
+			split($1, libs, ","); \
+			split($2, rpaths, ":"); \
+			\
+			# $3 is the full file path. Calculate $ORIGIN by stripping the filename.
+			origin = $3; \
+			sub("/[^/]+$", "", origin); \
+			\
+			for (i in libs) { \
+				lib = libs[i]; \
 {{ if IN(env.version; "6.0") then "" else ( -}}
-			$1 == "libc.so" { next } \
+				if (lib == "libc.so") continue; \
 {{ ) end -}}
-			system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } \
-			{ print "so:" $1 } \
-		' \
+				\
+				# 1. Skip if it exists in /usr/local/lib
+				if (!system("[ -e \"/usr/local/lib/" lib "\" ]")) continue; \
+				\
+				# 2. Check if satisfied by a bundled (relative) rpath
+				found = 0; \
+				for (j in rpaths) { \
+					rpath = rpaths[j]; \
+					\
+					# Only resolve $ORIGIN-relative rpaths.
+					if (sub(/^\$[{]?ORIGIN[}]?/, origin, rpath)) { \
+						if (!system("[ -e \"" rpath "/" lib "\" ]")) { \
+							found = 1; \
+							break; \
+						} \
+					} \
+				} \
+				\
+				# 3. If missing globally and not bundled locally, keep it as a system dep
+				if (!found) { \
+					print "so:" lib; \
+				} \
+			} \
+		}' \
+		| sort -u \
 	)"; \
 	apk add --no-network --virtual .redmine-rundeps $runDeps; \
 	apk del --no-network .build-deps; \

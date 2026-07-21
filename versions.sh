@@ -19,11 +19,11 @@ declare -A alpineVersions=(
 	#[5.0]='3.16'
 )
 # see https://www.redmine.org/projects/redmine/wiki/redmineinstall
-defaultRubyVersion='3.4'
+# https://www.redmine.org/news/161 (redmine 7.0: ruby 4.0.4+)
+defaultRubyVersion='4.0'
 declare -A rubyVersions=(
+	[6.1]='3.4'
 	[6.0]='3.3'
-	#[5.1]='3.2'
-	#[5.0]='3.1'
 )
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"

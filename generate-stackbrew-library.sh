@@ -2,7 +2,8 @@
 set -Eeuo pipefail
 
 declare -A aliases=(
-	[6.1]='6 latest'
+	[7.0]='7 latest'
+	[6.1]='6'
 )
 
 self="$(basename "$BASH_SOURCE")"
@@ -109,11 +110,24 @@ for version; do
 		fi
 		if [[ "$variant" = 'alpine'* ]] && [ "$version" != '6.0' ]; then
 			# 6.1 alpine fails to build in a reasonable time on arm32v6
+			# https://github.com/docker-library/redmine/pull/395
 			variantArches="$(jq <<<"$variantArches" --raw-input --raw-output '
-				split(" ")
-				| map(select(IN("arm32v6") | not))
+				split(" ") - [ "arm32v6" ]
 				| join(" ")
 			')"
+		fi
+		if [ "$version" != '6.0' ] && [ "$version" != '6.1' ]; then
+			# 7.0+ rust deps of magnus gem don't compile on i386 or arm32vX alpine
+			# /home/redmine/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/magnus-0.8.2/src/time.rs:141:9
+			# ...
+			# error[E0063]: missing fields `_bitfield_1` and `_bitfield_align_1` in
+			# initializer of `timespec`
+			if [[ "$variant" = 'alpine'* ]]; then
+				variantArches="$(jq <<<"$variantArches" --raw-input --raw-output '
+					split(" ") - [ "i386", "arm32v7", "arm32v6" ]
+					| join(" ")
+				')"
+			fi
 		fi
 
 		variantAliases=( "${versionAliases[@]/%/-$variant}" )
