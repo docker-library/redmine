@@ -25,7 +25,22 @@ jobs:
         run: |
           strategy="$("$BASHBREW_SCRIPTS/github-actions/generate.sh")"
           strategy="$("$BASHBREW_SCRIPTS/github-actions/munge-i386.sh" -c <<<"$strategy")"
-          strategy="$(jq -c <<<"$strategy" '.matrix.include = [ .matrix.include[] | select(.name | split("-") | (.[0] | split(".")[0:2] | join(".") | tonumber >= 6.1) and ( .[1] // "" | test("bookworm.*i386")) | not) ]')" # https://github.com/docker-library/redmine/pull/393 (6.1+ deps need newer rust on other arches and just isn't worth the trouble)
+          # https://github.com/docker-library/redmine/pull/393 (6.1+ deps need newer rust on other arches and just isn't worth the trouble)
+          # https://github.com/docker-library/redmine/pull/424 (7.0+ rust deps of magnus gem don't compile on Alpine i386)
+          strategy="$(
+            jq -c <<<"$strategy" '
+              .matrix.include |= map(
+                select(
+                  .name
+                  | split("-")
+                  | (.[0] | split(".")[0:2] | join(".") | tonumber) as $version
+                  | ($version >= 6.1 and (.[1] // "" | test("bookworm.*i386")))
+                  or ($version >= 7.0 and (.[1] // "" | test("alpine.*i386")))
+                  | not
+                )
+              )
+            '
+          )"
           echo "strategy=$strategy" >> "$GITHUB_OUTPUT"
           jq . <<<"$strategy" # sanity check / debugging aid
 
