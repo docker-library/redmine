@@ -34,17 +34,17 @@
   "7.0": {
     "alpine": "3.24",
     "debian": "trixie",
-    "downloadUrl": "https://www.redmine.org/releases/redmine-7.0.1.tar.gz",
+    "downloadUrl": "https://www.redmine.org/releases/redmine-7.0.2.tar.gz",
     "ruby": {
       "version": "4.0"
     },
-    "sha256": "68538b4310fa50ac79a521045cb55fe3bcffed5c1562d6844cf90e66e7619209",
+    "sha256": "d45e6d4c373cc3c8d33f1f4d4a2ffae1e1adb18703160707467493de7b4be591",
     "variants": [
       "trixie",
       "bookworm",
       "alpine3.24",
       "alpine3.23"
     ],
-    "version": "7.0.1"
+    "version": "7.0.2"
   }
 }
